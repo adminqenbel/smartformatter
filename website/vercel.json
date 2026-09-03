@@ -1,19 +1,11 @@
 {
   "cleanUrls": true,
   "trailingSlash": false,
-  "headers": [
+  "redirects": [
     {
-      "source": "/downloads/(.*)",
-      "headers": [
-        {
-          "key": "Content-Disposition",
-          "value": "attachment; filename=\"QenBel-Smart-Formatter-Setup.exe\""
-        },
-        {
-          "key": "Cache-Control",
-          "value": "public, max-age=31536000, immutable"
-        }
-      ]
+      "source": "/downloads/QenBel-Smart-Formatter-Setup.exe",
+      "destination": "https://github.com/adminqenbel/smartformatter/releases/download/v2.0.4/QenBel-Smart-Formatter-Setup.exe",
+      "permanent": false
     }
   ]
 }
