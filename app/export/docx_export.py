@@ -57,14 +57,6 @@ class DocxExporter:
 
             usable_w_cm = 21.0 - 2.4  # 18.6 cm
 
-            # Document Header
-            title_p = doc.add_paragraph()
-            title_p.alignment = WD_ALIGN_PARAGRAPH.CENTER
-            title_p.paragraph_format.space_after = Pt(10)
-            run = title_p.add_run(f"QenBel Smart Formatter — Card Print Sheet")
-            run.font.size = Pt(10)
-            run.font.color.rgb = RGBColor(120, 120, 120)
-
             with tempfile.TemporaryDirectory() as tmpdir:
                 tmp_path = Path(tmpdir)
 
@@ -105,37 +97,32 @@ class DocxExporter:
                         card_w = Cm(profile.width_mm / 10.0)
                         card_h = Cm(profile.height_mm / 10.0)
 
-                    # 2-column borderless table for side-by-side layout
+                    # 2-column borderless table for side-by-side layout (NO text/labels)
                     table = doc.add_table(rows=1, cols=2)
                     table.alignment = WD_TABLE_ALIGNMENT.CENTER
                     table.autofit = False
 
-                    # Left cell: FRONT
+                    # Left cell: FRONT image only
                     cell_left = table.cell(0, 0)
                     cell_left.width = Cm(usable_w_cm / 2.0)
                     p_left = cell_left.paragraphs[0]
                     p_left.alignment = WD_ALIGN_PARAGRAPH.CENTER
-                    r_f = p_left.add_run("FRONT\n")
-                    r_f.bold = True
-                    r_f.font.size = Pt(8.5)
-                    r_f.font.color.rgb = RGBColor(90, 90, 90)
+                    p_left.paragraph_format.space_before = Pt(0)
+                    p_left.paragraph_format.space_after = Pt(0)
                     p_left.add_run().add_picture(str(front_tmp), width=card_w, height=card_h)
 
-                    # Right cell: BACK
+                    # Right cell: BACK image only
                     cell_right = table.cell(0, 1)
                     cell_right.width = Cm(usable_w_cm / 2.0)
                     p_right = cell_right.paragraphs[0]
                     p_right.alignment = WD_ALIGN_PARAGRAPH.CENTER
-                    r_b = p_right.add_run("BACK\n")
-                    r_b.bold = True
-                    r_b.font.size = Pt(8.5)
-                    r_b.font.color.rgb = RGBColor(90, 90, 90)
+                    p_right.paragraph_format.space_before = Pt(0)
+                    p_right.paragraph_format.space_after = Pt(0)
                     p_right.add_run().add_picture(str(back_tmp), width=card_w, height=card_h)
 
                 elif front_tmp or back_tmp:
-                    # Single side present
+                    # Single side present (NO text/labels)
                     active_tmp = front_tmp or back_tmp
-                    side_label = "FRONT" if front_tmp else "BACK"
 
                     if is_long_form:
                         card_w = Cm(18.5)
@@ -149,10 +136,8 @@ class DocxExporter:
 
                     p = doc.add_paragraph()
                     p.alignment = WD_ALIGN_PARAGRAPH.CENTER
-                    r_s = p.add_run(f"{side_label}\n")
-                    r_s.bold = True
-                    r_s.font.size = Pt(8.5)
-                    r_s.font.color.rgb = RGBColor(90, 90, 90)
+                    p.paragraph_format.space_before = Pt(0)
+                    p.paragraph_format.space_after = Pt(0)
                     p.add_run().add_picture(str(active_tmp), width=card_w, height=card_h)
 
             doc.save(str(out_file))
