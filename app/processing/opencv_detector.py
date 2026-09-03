@@ -243,6 +243,65 @@ class OpenCVDetector(DocumentDetector):
 
         return fg
 
+    def _subtract_skin(self, image: np.ndarray, fg_mask: np.ndarray) -> np.ndarray:
+        """
+        Removes skin-colored pixels from the foreground mask.
+
+        When a card is held in someone's hand the foreground segmentation
+        picks up the hand/arm as document content, causing the outer-boundary
+        quad to encompass the holder rather than the card.
+        Skin tones occupy a well-defined region in YCrCb and HSV color spaces;
+        subtracting them from the foreground mask leaves mostly the card face.
+
+        Conservative thresholds are used so that cards with skin-tone
+        backgrounds (light-brown paper) are not mistakenly suppressed.
+        """
+        h, w = fg_mask.shape[:2]
+
+        # ── YCrCb skin model (robust across ethnicities) ──────────────────
+        ycrcb = cv2.cvtColor(image, cv2.COLOR_BGR2YCrCb)
+        skin_ycrcb = cv2.inRange(
+            ycrcb,
+            np.array([0,   133, 77],  dtype=np.uint8),
+            np.array([255, 173, 127], dtype=np.uint8),
+        )
+
+        # ── HSV skin model ────────────────────────────────────────────────
+        hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
+        skin_hsv = cv2.inRange(
+            hsv,
+            np.array([0,  20,  50],  dtype=np.uint8),
+            np.array([25, 200, 255], dtype=np.uint8),
+        )
+        # Wrap-around for reddish hues (H > 165)
+        skin_hsv2 = cv2.inRange(
+            hsv,
+            np.array([165, 20,  50],  dtype=np.uint8),
+            np.array([180, 200, 255], dtype=np.uint8),
+        )
+        skin_hsv = cv2.bitwise_or(skin_hsv, skin_hsv2)
+
+        # Intersection of both models → conservative skin mask
+        skin = cv2.bitwise_and(skin_ycrcb, skin_hsv)
+
+        # Dilate slightly to cover partially-saturated edge pixels
+        k = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (7, 7))
+        skin = cv2.dilate(skin, k, iterations=2)
+
+        # Only suppress skin if it is actually present in the foreground
+        # (guard against incorrectly stripping cards on skin-tone backgrounds).
+        skin_in_fg = cv2.countNonZero(cv2.bitwise_and(fg_mask, skin))
+        if skin_in_fg < int(0.03 * h * w):
+            return fg_mask  # negligible skin detected – leave mask unchanged
+
+        no_skin = cv2.bitwise_and(fg_mask, cv2.bitwise_not(skin))
+
+        # Only use the skin-suppressed mask if it still has meaningful content
+        # (some cards have skin-tone colour fields; we don't want to erase them).
+        if cv2.countNonZero(no_skin) >= int(0.03 * h * w):
+            return no_skin
+        return fg_mask  # fallback: skin suppression removed too much
+
     def _clean_foreground(self, fg_mask: np.ndarray) -> np.ndarray:
         """
         Drops tiny speckle components (noise, reflections far from the document)
@@ -275,8 +334,147 @@ class OpenCVDetector(DocumentDetector):
         # Strategy A: contour approximation across multiple binary sources.
         candidates.extend(self._strategy_contour_approx(scaled, total_scaled_area))
 
-        # Strategy B: foreground-region outer footprint (primary outer detector).
-        candidates.extend(self._strategy_foreground_outer(scaled, fg_mask, total_scaled_area))
+        # Strategy B: Hough-line rectangle — finds the card's actual physical
+        # boundary from dominant straight-edge segments. Most reliable strategy
+        # for cards held in hands where the foreground includes skin.
+        candidates.extend(self._strategy_hough_rectangle(scaled, total_scaled_area))
+
+        # Strategy C: foreground-region outer footprint.
+        # Use skin-suppressed foreground so that the holder's hand/arm does
+        # not inflate the bounding quad beyond the card boundary.
+        fg_no_skin = self._subtract_skin(scaled, fg_mask)
+        candidates.extend(self._strategy_foreground_outer(scaled, fg_no_skin, total_scaled_area))
+
+        return candidates
+
+    def _strategy_hough_rectangle(
+        self, scaled: np.ndarray, total_scaled_area: float
+    ) -> List[Tuple[np.ndarray, str]]:
+        """
+        Detects the card boundary using Probabilistic Hough Line Transform.
+
+        Cards have 4 very straight, sharp edges. This strategy:
+        1. Detects all strong line segments.
+        2. Clusters them into 4 directional groups (top, bottom, left, right).
+        3. Fits one representative line per group.
+        4. Computes the 4 corner intersection points.
+
+        Robust for cards held in hands because card edges are usually
+        sharper than the skin/background boundary.
+        """
+        h_sc, w_sc = scaled.shape[:2]
+        candidates: List[Tuple[np.ndarray, str]] = []
+
+        gray = cv2.cvtColor(scaled, cv2.COLOR_BGR2GRAY)
+        blurred = cv2.GaussianBlur(gray, (5, 5), 0)
+        high_t, _ = cv2.threshold(blurred, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+        edges = cv2.Canny(blurred, 0.3 * high_t, high_t)
+
+        # Dilate edges slightly to bridge tiny gaps at card corners
+        k = cv2.getStructuringElement(cv2.MORPH_RECT, (3, 3))
+        edges = cv2.dilate(edges, k, iterations=1)
+
+        min_line_len = int(0.12 * min(h_sc, w_sc))
+        lines = cv2.HoughLinesP(
+            edges,
+            rho=1,
+            theta=np.pi / 180,
+            threshold=max(30, int(0.06 * min(h_sc, w_sc))),
+            minLineLength=min_line_len,
+            maxLineGap=int(0.04 * min(h_sc, w_sc)),
+        )
+        if lines is None or len(lines) < 4:
+            return candidates
+
+        # Represent each segment by its angle (0-180°), midpoint, and length
+        segs = []
+        for seg in lines:
+            x1, y1, x2, y2 = seg[0]
+            angle = float(np.degrees(np.arctan2(y2 - y1, x2 - x1))) % 180.0
+            mx, my = (x1 + x2) / 2.0, (y1 + y2) / 2.0
+            length = float(np.hypot(x2 - x1, y2 - y1))
+            segs.append((angle, mx, my, length, x1, y1, x2, y2))
+
+        def _angle_diff(a, b):
+            d = abs(a - b) % 180
+            return min(d, 180 - d)
+
+        def _line_from_segs(group):
+            """Fit a single line to a group of segments (weighted by length)."""
+            pts, wts = [], []
+            for angle, mx, my, length, x1, y1, x2, y2 in group:
+                pts.extend([(x1, y1), (x2, y2)])
+                wts.extend([length, length])
+            pts = np.array(pts, dtype=np.float32)
+            wts = np.array(wts, dtype=np.float32)
+            cx = np.average(pts[:, 0], weights=wts)
+            cy = np.average(pts[:, 1], weights=wts)
+            a_mean = float(np.average([s[0] for s in group], weights=[s[3] for s in group]))
+            return cx, cy, a_mean  # (cx, cy, angle_degrees)
+
+        def _intersect(cx1, cy1, a1_deg, cx2, cy2, a2_deg):
+            """Intersect two lines given centre-point + angle."""
+            a1, a2 = np.radians(a1_deg), np.radians(a2_deg)
+            dx1, dy1 = np.cos(a1), np.sin(a1)
+            dx2, dy2 = np.cos(a2), np.sin(a2)
+            denom = dx1 * dy2 - dy1 * dx2
+            if abs(denom) < 1e-6:
+                return None
+            t = ((cx2 - cx1) * dy2 - (cy2 - cy1) * dx2) / denom
+            return float(cx1 + t * dx1), float(cy1 + t * dy1)
+
+        # Try two angular decompositions: near-axis-aligned cards and
+        # moderately rotated cards (up to ~45°).
+        for rot_offset in [0, 45]:
+            h_segs, v_segs = [], []
+            for seg in segs:
+                a = (seg[0] + rot_offset) % 180
+                if a <= 25 or a >= 155:
+                    h_segs.append(seg)  # "horizontal"
+                elif 65 <= a <= 115:
+                    v_segs.append(seg)  # "vertical"
+
+            if len(h_segs) < 2 or len(v_segs) < 2:
+                continue
+
+            # Split horizontals into top vs bottom by midpoint y
+            h_segs.sort(key=lambda s: s[2])  # sort by my
+            mid_y = np.mean([s[2] for s in h_segs])
+            top_segs = [s for s in h_segs if s[2] <= mid_y]
+            bot_segs = [s for s in h_segs if s[2] > mid_y]
+
+            # Split verticals into left vs right by midpoint x
+            v_segs.sort(key=lambda s: s[1])  # sort by mx
+            mid_x = np.mean([s[1] for s in v_segs])
+            left_segs = [s for s in v_segs if s[1] <= mid_x]
+            right_segs = [s for s in v_segs if s[1] > mid_x]
+
+            if not (top_segs and bot_segs and left_segs and right_segs):
+                continue
+
+            top_line    = _line_from_segs(top_segs)
+            bot_line    = _line_from_segs(bot_segs)
+            left_line   = _line_from_segs(left_segs)
+            right_line  = _line_from_segs(right_segs)
+
+            corners = [
+                _intersect(*top_line,   *left_line),
+                _intersect(*top_line,   *right_line),
+                _intersect(*bot_line,   *right_line),
+                _intersect(*bot_line,   *left_line),
+            ]
+            if any(c is None for c in corners):
+                continue
+
+            pts = np.array(corners, dtype=np.float32)
+            # Clip to image bounds with a small margin
+            pts[:, 0] = np.clip(pts[:, 0], -0.1 * w_sc, 1.1 * w_sc)
+            pts[:, 1] = np.clip(pts[:, 1], -0.1 * h_sc, 1.1 * h_sc)
+
+            area = cv2.contourArea(pts.reshape(-1, 1, 2))
+            area_ratio = area / max(total_scaled_area, 1)
+            if _MIN_AREA_RATIO <= area_ratio <= 0.80 and self._valid_quad(pts, w_sc, h_sc):
+                candidates.append((pts, f"hough_rect_rot{rot_offset}"))
 
         return candidates
 
