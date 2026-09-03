@@ -30,11 +30,13 @@ class DocxExporter:
         cls,
         card_pair: CardPair,
         output_path: Union[str, Path],
-        layout: str = "side_by_side"  # "side_by_side" or "stacked"
+        layout: str = "side_by_side"
     ) -> bool:
         """
-        Exports Front and Back cards to a print-ready Word document with standard physical dimensions.
-        Calculates physical sizing dynamically from the active FormatProfile.
+        Exports Front and Back cards to a print-ready Microsoft Word (.docx) document.
+        Always uses standard A4 portrait page layout (210 x 297 mm).
+        Cards occupy strictly their respective physical/proportional dimensions at the top
+        of the page (side-by-side), leaving the remaining page blank (NOT stretched full page).
         """
         out_file = Path(output_path)
         out_file.parent.mkdir(parents=True, exist_ok=True)
@@ -43,34 +45,25 @@ class DocxExporter:
             doc = Document()
             profile = card_pair.format_profile or CARD_PROFILE
 
-            # Keep Word consistent with the card-mode contract: two sides are
-            # placed horizontally. Long Form therefore uses a custom-wide
-            # landscape page instead of silently falling back to stacked output.
+            # Standard A4 Portrait Page Setup (210 mm x 297 mm)
             section = doc.sections[0]
-            card_w_cm = profile.width_mm / 10.0
-            card_h_cm = profile.height_mm / 10.0
+            section.orientation = WD_ORIENT.PORTRAIT
+            section.page_width = Cm(21.0)
+            section.page_height = Cm(29.7)
+            section.top_margin = Cm(1.5)
+            section.bottom_margin = Cm(1.5)
+            section.left_margin = Cm(1.2)
+            section.right_margin = Cm(1.2)
 
-            has_both_sides = card_pair.front is not None and card_pair.back is not None
-            if has_both_sides and layout == "side_by_side":
-                section.orientation = WD_ORIENT.LANDSCAPE
-                section.page_width = Cm(max(29.7, card_w_cm * 2 + 1.0))
-                section.page_height = Cm(max(21.0, card_h_cm + 1.0))
-                section.top_margin = Inches(0.4)
-                section.bottom_margin = Inches(0.4)
-                section.left_margin = Inches(0.4)
-                section.right_margin = Inches(0.4)
-            else:
-                section.top_margin = Inches(PrintConfig.DOCX_MARGIN_INCH)
-                section.bottom_margin = Inches(PrintConfig.DOCX_MARGIN_INCH)
-                section.left_margin = Inches(PrintConfig.DOCX_MARGIN_INCH)
-                section.right_margin = Inches(PrintConfig.DOCX_MARGIN_INCH)
+            usable_w_cm = 21.0 - 2.4  # 18.6 cm
 
             # Document Header
             title_p = doc.add_paragraph()
             title_p.alignment = WD_ALIGN_PARAGRAPH.CENTER
-            run = title_p.add_run(f"QenBel Smart Formatter — {profile.name} Print Sheet ({profile.dimensions_mm_str})")
-            run.font.size = Pt(9.5)
-            run.font.color.rgb = RGBColor(128, 128, 128)
+            title_p.paragraph_format.space_after = Pt(10)
+            run = title_p.add_run(f"QenBel Smart Formatter — Card Print Sheet")
+            run.font.size = Pt(10)
+            run.font.color.rgb = RGBColor(120, 120, 120)
 
             with tempfile.TemporaryDirectory() as tmpdir:
                 tmp_path = Path(tmpdir)
@@ -89,74 +82,78 @@ class DocxExporter:
                     back_tmp = tmp_path / "back_card.png"
                     cv2.imwrite(str(back_tmp), back_img)
 
-                # Determine card dimensions from image orientation
+                # Determine card dimensions based on active profile:
+                # - Standard Card: 86 x 54 mm (exact real-world size: 8.6 cm x 5.4 cm)
+                # - Long Form: 210 x 85 mm (aspect 2.47:1) -> fits side-by-side across A4 at 9.1 cm x 3.68 cm each
+                is_long_form = (profile.id == "long_form" or profile.aspect_ratio >= 2.0)
                 is_portrait = False
                 if front_img is not None:
                     is_portrait = front_img.shape[0] > front_img.shape[1]
                 elif back_img is not None:
                     is_portrait = back_img.shape[0] > back_img.shape[1]
 
-                if is_portrait:
-                    card_w = Cm(card_h_cm)
-                    card_h = Cm(card_w_cm)
-                else:
-                    card_w = Cm(card_w_cm)
-                    card_h = Cm(card_h_cm)
-
-                # Export images
                 if front_tmp and back_tmp:
-                    if layout == "side_by_side" and not is_portrait:
-                        # 2-column table for side-by-side presentation
-                        table = doc.add_table(rows=1, cols=2)
-                        table.alignment = WD_TABLE_ALIGNMENT.CENTER
-
-                        cell_left = table.cell(0, 0)
-                        p_left = cell_left.paragraphs[0]
-                        p_left.alignment = WD_ALIGN_PARAGRAPH.CENTER
-                        p_left.add_run("FRONT\n").bold = True
-                        p_left.runs[0].font.size = Pt(9)
-                        p_left.runs[0].font.color.rgb = RGBColor(100, 100, 100)
-                        p_left.add_run().add_picture(str(front_tmp), width=card_w, height=card_h)
-
-                        cell_right = table.cell(0, 1)
-                        p_right = cell_right.paragraphs[0]
-                        p_right.alignment = WD_ALIGN_PARAGRAPH.CENTER
-                        p_right.add_run("BACK\n").bold = True
-                        p_right.runs[0].font.size = Pt(9)
-                        p_right.runs[0].font.color.rgb = RGBColor(100, 100, 100)
-                        p_right.add_run().add_picture(str(back_tmp), width=card_w, height=card_h)
-
+                    if is_long_form:
+                        # Long Form side-by-side: each takes half usable width (9.1 cm x 3.68 cm)
+                        card_w = Cm(9.1)
+                        card_h = Cm(round(9.1 / max(profile.aspect_ratio, 1e-3), 2))
+                    elif is_portrait:
+                        card_w = Cm(profile.height_mm / 10.0)
+                        card_h = Cm(profile.width_mm / 10.0)
                     else:
-                        # Stacked layout
-                        p_f = doc.add_paragraph()
-                        p_f.alignment = WD_ALIGN_PARAGRAPH.CENTER
-                        p_f.add_run("FRONT\n").bold = True
-                        p_f.runs[0].font.size = Pt(9)
-                        p_f.runs[0].font.color.rgb = RGBColor(100, 100, 100)
-                        p_f.add_run().add_picture(str(front_tmp), width=card_w, height=card_h)
+                        # Standard Card: exact physical size 8.6 cm x 5.4 cm
+                        card_w = Cm(profile.width_mm / 10.0)
+                        card_h = Cm(profile.height_mm / 10.0)
 
-                        p_b = doc.add_paragraph()
-                        p_b.alignment = WD_ALIGN_PARAGRAPH.CENTER
-                        p_b.add_run("\nBACK\n").bold = True
-                        p_b.runs[0].font.size = Pt(9)
-                        p_b.runs[0].font.color.rgb = RGBColor(100, 100, 100)
-                        p_b.add_run().add_picture(str(back_tmp), width=card_w, height=card_h)
+                    # 2-column borderless table for side-by-side layout
+                    table = doc.add_table(rows=1, cols=2)
+                    table.alignment = WD_TABLE_ALIGNMENT.CENTER
+                    table.autofit = False
 
-                elif front_tmp:
+                    # Left cell: FRONT
+                    cell_left = table.cell(0, 0)
+                    cell_left.width = Cm(usable_w_cm / 2.0)
+                    p_left = cell_left.paragraphs[0]
+                    p_left.alignment = WD_ALIGN_PARAGRAPH.CENTER
+                    r_f = p_left.add_run("FRONT\n")
+                    r_f.bold = True
+                    r_f.font.size = Pt(8.5)
+                    r_f.font.color.rgb = RGBColor(90, 90, 90)
+                    p_left.add_run().add_picture(str(front_tmp), width=card_w, height=card_h)
+
+                    # Right cell: BACK
+                    cell_right = table.cell(0, 1)
+                    cell_right.width = Cm(usable_w_cm / 2.0)
+                    p_right = cell_right.paragraphs[0]
+                    p_right.alignment = WD_ALIGN_PARAGRAPH.CENTER
+                    r_b = p_right.add_run("BACK\n")
+                    r_b.bold = True
+                    r_b.font.size = Pt(8.5)
+                    r_b.font.color.rgb = RGBColor(90, 90, 90)
+                    p_right.add_run().add_picture(str(back_tmp), width=card_w, height=card_h)
+
+                elif front_tmp or back_tmp:
+                    # Single side present
+                    active_tmp = front_tmp or back_tmp
+                    side_label = "FRONT" if front_tmp else "BACK"
+
+                    if is_long_form:
+                        card_w = Cm(18.5)
+                        card_h = Cm(round(18.5 / max(profile.aspect_ratio, 1e-3), 2))
+                    elif is_portrait:
+                        card_w = Cm(profile.height_mm / 10.0)
+                        card_h = Cm(profile.width_mm / 10.0)
+                    else:
+                        card_w = Cm(profile.width_mm / 10.0)
+                        card_h = Cm(profile.height_mm / 10.0)
+
                     p = doc.add_paragraph()
                     p.alignment = WD_ALIGN_PARAGRAPH.CENTER
-                    p.add_run("FRONT\n").bold = True
-                    p.runs[0].font.size = Pt(9)
-                    p.runs[0].font.color.rgb = RGBColor(100, 100, 100)
-                    p.add_run().add_picture(str(front_tmp), width=card_w, height=card_h)
-
-                elif back_tmp:
-                    p = doc.add_paragraph()
-                    p.alignment = WD_ALIGN_PARAGRAPH.CENTER
-                    p.add_run("BACK\n").bold = True
-                    p.runs[0].font.size = Pt(9)
-                    p.runs[0].font.color.rgb = RGBColor(100, 100, 100)
-                    p.add_run().add_picture(str(back_tmp), width=card_w, height=card_h)
+                    r_s = p.add_run(f"{side_label}\n")
+                    r_s.bold = True
+                    r_s.font.size = Pt(8.5)
+                    r_s.font.color.rgb = RGBColor(90, 90, 90)
+                    p.add_run().add_picture(str(active_tmp), width=card_w, height=card_h)
 
             doc.save(str(out_file))
             logger.info(f"Successfully exported Word document to {out_file}")

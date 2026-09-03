@@ -118,162 +118,85 @@ class PagePrint(QWidget):
         title_box.setSpacing(2)
 
         step_lbl = QLabel("STEP 5 OF 5")
-        step_lbl.setStyleSheet("font-size: 11px; font-weight: 800; letter-spacing: 1.5px; color: #10B981; background: transparent;")
+        step_lbl.setStyleSheet("font-size: 11px; font-weight: 800; letter-spacing: 1.5px; color: #38BDF8; background: transparent;")
         title_box.addWidget(step_lbl)
 
-        title = QLabel("Print & Export")
+        title = QLabel("Export Word Document")
         title.setStyleSheet("font-size: 22px; font-weight: 800; color: #FFFFFF; letter-spacing: -0.3px; background: transparent;")
         title_box.addWidget(title)
         r_layout.addLayout(title_box)
 
-        # Printer Selector
-        p_box = QVBoxLayout()
-        p_box.setSpacing(6)
-        lbl_p = QLabel("Printer")
-        lbl_p.setStyleSheet("font-size: 12px; font-weight: 700; color: #94A3B8; background: transparent;")
-        p_box.addWidget(lbl_p)
+        # Word Document Info Card
+        info_card = QFrame()
+        info_card.setStyleSheet("""
+            QFrame {
+                background-color: #0F0F14;
+                border: 1px solid #1E293B;
+                border-radius: 12px;
+                padding: 16px;
+            }
+        """)
+        info_lay = QVBoxLayout(info_card)
+        info_lay.setSpacing(10)
 
-        self.combo_printers = QComboBox()
-        self.combo_printers.setFixedHeight(38)
-        self.combo_printers.setStyleSheet(self._combo_style())
-        self._populate_printers()
-        p_box.addWidget(self.combo_printers)
-        r_layout.addLayout(p_box)
+        info_title = QLabel("📄 Microsoft Word (.docx)")
+        info_title.setStyleSheet("font-size: 15px; font-weight: 800; color: #FFFFFF; background: transparent;")
+        info_lay.addWidget(info_title)
 
-        # Copies Selector
-        c_box = QVBoxLayout()
-        c_box.setSpacing(6)
-        lbl_c = QLabel("Copies")
-        lbl_c.setStyleSheet("font-size: 12px; font-weight: 700; color: #94A3B8; background: transparent;")
-        c_box.addWidget(lbl_c)
+        info_desc = QLabel(
+            "Exports a print-ready Word document on standard A4 paper with Front and Back "
+            "sides arranged side-by-side at exact physical dimensions (occupying only respective space)."
+        )
+        info_desc.setWordWrap(True)
+        info_desc.setStyleSheet("font-size: 12px; color: #94A3B8; line-height: 1.4; background: transparent;")
+        info_lay.addWidget(info_desc)
 
-        copies_row = QHBoxLayout()
-        copies_row.setSpacing(8)
+        r_layout.addWidget(info_card)
 
-        btn_minus = QPushButton("−")
-        btn_minus.setFixedSize(36, 36)
-        btn_minus.setCursor(Qt.PointingHandCursor)
-        btn_minus.setStyleSheet(self._stepper_style())
-        btn_minus.clicked.connect(self._decrement_copies)
-        copies_row.addWidget(btn_minus)
+        r_layout.addSpacing(10)
 
-        self.lbl_copies = QLabel("1")
-        self.lbl_copies.setAlignment(Qt.AlignCenter)
-        self.lbl_copies.setFixedWidth(40)
-        self.lbl_copies.setStyleSheet("font-size: 16px; font-weight: 700; color: #FFFFFF; background: transparent;")
-        copies_row.addWidget(self.lbl_copies)
-
-        btn_plus = QPushButton("＋")
-        btn_plus.setFixedSize(36, 36)
-        btn_plus.setCursor(Qt.PointingHandCursor)
-        btn_plus.setStyleSheet(self._stepper_style())
-        btn_plus.clicked.connect(self._increment_copies)
-        copies_row.addWidget(btn_plus)
-
-        copies_row.addStretch()
-        c_box.addLayout(copies_row)
-        r_layout.addLayout(c_box)
-
-        # Paper Size & Scaling
-        opt_box = QVBoxLayout()
-        opt_box.setSpacing(6)
-        lbl_opt = QLabel("Paper Size & Scaling")
-        lbl_opt.setStyleSheet("font-size: 12px; font-weight: 700; color: #94A3B8; background: transparent;")
-        opt_box.addWidget(lbl_opt)
-
-        self.combo_paper = QComboBox()
-        self.combo_paper.setFixedHeight(36)
-        self.combo_paper.setStyleSheet(self._combo_style())
-        self.combo_paper.addItems(["Printer Default", "A4 (210 × 297 mm)", "Letter (8.5 × 11 in)"])
-        opt_box.addWidget(self.combo_paper)
-
-        self.combo_scaling = QComboBox()
-        self.combo_scaling.setFixedHeight(36)
-        self.combo_scaling.setStyleSheet(self._combo_style())
-        self.combo_scaling.addItems(["Actual Size (100% 300 DPI)", "Fit to Printable Area"])
-        opt_box.addWidget(self.combo_scaling)
-        r_layout.addLayout(opt_box)
-
-        r_layout.addSpacing(6)
-
-        # Primary PRINT Button
-        self.btn_print = QPushButton("  🖨   PRINT  ")
-        self.btn_print.setCursor(Qt.PointingHandCursor)
-        self.btn_print.setFixedHeight(52)
-        self.btn_print.setStyleSheet("""
+        # Single Primary Action: EXPORT AS WORD (.DOCX)
+        self.btn_export_docx = QPushButton("  📄   EXPORT AS WORD (.DOCX)  ")
+        self.btn_export_docx.setCursor(Qt.PointingHandCursor)
+        self.btn_export_docx.setFixedHeight(56)
+        self.btn_export_docx.setStyleSheet("""
             QPushButton {
-                background-color: #10B981;
+                background-color: #185ABD;
                 color: #FFFFFF;
                 border: none;
                 border-radius: 12px;
-                font-size: 16px;
+                font-size: 15px;
                 font-weight: 800;
                 letter-spacing: 0.5px;
             }
             QPushButton:hover {
-                background-color: #059669;
+                background-color: #10458C;
             }
             QPushButton:pressed {
-                background-color: #047857;
+                background-color: #0B336B;
             }
             QPushButton:disabled {
                 background-color: #1E293B;
                 color: #475569;
             }
         """)
-        self.btn_print.clicked.connect(self._on_print)
-        r_layout.addWidget(self.btn_print)
-
-        # Secondary Actions
-        sec_box = QVBoxLayout()
-        sec_box.setSpacing(8)
-
-        self.btn_save_img = QPushButton("Save Image (PNG)")
-        self.btn_save_img.setCursor(Qt.PointingHandCursor)
-        self.btn_save_img.setFixedHeight(40)
-        self.btn_save_img.setStyleSheet(self._sec_btn_style())
-        self.btn_save_img.clicked.connect(self._on_save_image)
-        sec_box.addWidget(self.btn_save_img)
-
-        self.btn_export_pdf = QPushButton("Export PDF")
-        self.btn_export_pdf.setCursor(Qt.PointingHandCursor)
-        self.btn_export_pdf.setFixedHeight(40)
-        self.btn_export_pdf.setStyleSheet(self._sec_btn_style())
-        self.btn_export_pdf.clicked.connect(self._on_export_pdf)
-        sec_box.addWidget(self.btn_export_pdf)
-
-        self.btn_more = QPushButton("More Export Options ▼")
-        self.btn_more.setCursor(Qt.PointingHandCursor)
-        self.btn_more.setFixedHeight(34)
-        self.btn_more.setStyleSheet("""
-            QPushButton {
-                background: transparent;
-                color: #64748B;
-                border: none;
-                font-size: 12px;
-                font-weight: 600;
-            }
-            QPushButton:hover { color: #94A3B8; }
-        """)
-        self.btn_more.clicked.connect(self._show_more_menu)
-        sec_box.addWidget(self.btn_more, alignment=Qt.AlignCenter)
-
-        r_layout.addLayout(sec_box)
+        self.btn_export_docx.clicked.connect(self._on_export_docx)
+        r_layout.addWidget(self.btn_export_docx)
 
         r_layout.addStretch()
 
         # Start New Card Button
         btn_new = QPushButton("⟲  Start New Card")
         btn_new.setCursor(Qt.PointingHandCursor)
-        btn_new.setFixedHeight(36)
+        btn_new.setFixedHeight(40)
         btn_new.setStyleSheet("""
             QPushButton {
                 background-color: transparent;
                 color: #38BDF8;
                 border: 1px solid #1E293B;
                 border-radius: 8px;
-                font-size: 12px;
-                font-weight: 600;
+                font-size: 13px;
+                font-weight: 700;
             }
             QPushButton:hover {
                 background-color: #1E293B;
@@ -363,9 +286,7 @@ class PagePrint(QWidget):
         if entry is None or entry.is_empty():
             self.lbl_preview.setPixmap(QPixmap())
             self.lbl_doc_info.setText("No card loaded.")
-            self.btn_print.setEnabled(False)
-            self.btn_save_img.setEnabled(False)
-            self.btn_export_pdf.setEnabled(False)
+            self.btn_export_docx.setEnabled(False)
             return
 
         f_proc = entry.front
@@ -390,121 +311,37 @@ class PagePrint(QWidget):
 
         if metrics:
             self.lbl_doc_info.setText(
-                f"Output: {profile.name}  •  {metrics.page_width_mm:.0f} × {metrics.page_height_mm:.0f} mm  •  "
-                f"{metrics.page_width_px} × {metrics.page_height_px} px @ 300 DPI"
+                f"Output: {profile.name}  •  {profile.dimensions_mm_str}  •  "
+                f"Formatted on A4 Sheet ready for printing"
             )
 
-        self.btn_print.setEnabled(True)
-        self.btn_save_img.setEnabled(True)
-        self.btn_export_pdf.setEnabled(True)
-
-    def _on_print(self):
-        entry = self.pipeline.card_entry
-        if not entry or entry.is_empty():
-            return
-
-        printer_name = self.combo_printers.currentText()
-        if printer_name == "Default System Printer":
-            printer_name = None
-
-        ok = PrintManager.print_card_pair(
-            self.pipeline.card_pair,
-            parent_widget=self,
-            copies=self.copies,
-            printer_name=printer_name,
-            show_dialog=False,
-            single_page=False,
-        )
-        if ok:
-            QMessageBox.information(self, "Print Sent", "The document was sent directly to the printer.")
-        else:
-            # Fallback to system dialog
-            PrintManager.print_card_pair(
-                self.pipeline.card_pair,
-                parent_widget=self,
-                copies=self.copies,
-                show_dialog=True,
-                single_page=False,
-            )
-
-    def _on_save_image(self):
-        entry = self.pipeline.card_entry
-        if not entry or entry.is_empty():
-            return
-        path, _ = QFileDialog.getSaveFileName(
-            self, "Save Card Image", "card_output.png", "PNG Image (*.png);;JPEG Image (*.jpg)"
-        )
-        if not path:
-            return
-        ok = ImageExporter.export_card_pair(
-            self.pipeline.card_pair, path, copies=self.copies, single_page=False
-        )
-        if ok:
-            QMessageBox.information(self, "Image Saved", f"Image saved successfully to:\n{path}")
-        else:
-            QMessageBox.critical(self, "Save Failed", "Could not save the image.")
-
-    def _on_export_pdf(self):
-        entry = self.pipeline.card_entry
-        if not entry or entry.is_empty():
-            return
-        path, _ = QFileDialog.getSaveFileName(
-            self, "Export PDF", "card_output.pdf", "PDF Document (*.pdf)"
-        )
-        if not path:
-            return
-        ok = PdfExporter.export_card_pair(
-            self.pipeline.card_pair, path, copies=self.copies, single_page=False
-        )
-        if ok:
-            QMessageBox.information(self, "PDF Exported", f"PDF exported successfully to:\n{path}")
-        else:
-            QMessageBox.critical(self, "Export Failed", "Could not export PDF.")
-
-    def _show_more_menu(self):
-        menu = QMenu(self)
-        menu.setStyleSheet("""
-            QMenu {
-                background-color: #1E293B;
-                color: #FFFFFF;
-                border: 1px solid #334155;
-                padding: 4px;
-            }
-            QMenu::item:selected {
-                background-color: #2563EB;
-            }
-        """)
-        action_docx = menu.addAction("Export Microsoft Word (.docx)")
-        action_tiled = menu.addAction("Export Tiled A4 Sheet (PNG)")
-        action = menu.exec(self.btn_more.mapToGlobal(self.btn_more.rect().bottomLeft()))
-
-        if action == action_docx:
-            self._on_export_docx()
-        elif action == action_tiled:
-            self._on_export_tiled_sheet()
+        self.btn_export_docx.setEnabled(True)
 
     def _on_export_docx(self):
+        entry = self.pipeline.card_entry
+        if not entry or entry.is_empty():
+            return
         path, _ = QFileDialog.getSaveFileName(
-            self, "Export Word Document", "card_output.docx", "Word Document (*.docx)"
+            self, "Export Word Document", "Formatted_Print_Document.docx", "Word Document (*.docx)"
         )
         if not path:
             return
         ok = DocxExporter.export_card_pair(self.pipeline.card_pair, path)
         if ok:
-            QMessageBox.information(self, "Word Exported", f"Document exported successfully to:\n{path}")
+            msg_box = QMessageBox(self)
+            msg_box.setWindowTitle("Word Document Ready")
+            msg_box.setText(f"Print-ready document exported successfully:\n\n{path}")
+            msg_box.setIcon(QMessageBox.Information)
+            btn_open = msg_box.addButton("Open Document", QMessageBox.ActionRole)
+            msg_box.addButton(QMessageBox.Ok)
+            msg_box.exec()
+
+            if msg_box.clickedButton() == btn_open:
+                import os
+                try:
+                    os.startfile(path)
+                except Exception as e:
+                    logger.error(f"Failed to open exported file {path}: {e}")
         else:
             QMessageBox.critical(self, "Export Failed", "Could not export Word document.")
 
-    def _on_export_tiled_sheet(self):
-        path, _ = QFileDialog.getSaveFileName(
-            self, "Export Tiled Sheet", "cards_sheet.png", "PNG Image (*.png)"
-        )
-        if not path:
-            return
-        ok = ImageExporter.export_card_pair(
-            self.pipeline.card_pair, path, copies=self.copies, single_page=True
-        )
-        if ok:
-            QMessageBox.information(self, "Sheet Exported", f"Tiled sheet exported successfully to:\n{path}")
-        else:
-            QMessageBox.critical(self, "Export Failed", "Could not export tiled sheet.")

@@ -1,5 +1,5 @@
 {
-  "buildCommand": null,
+  "buildCommand": "git lfs install && git lfs pull",
   "outputDirectory": "website",
   "cleanUrls": true,
   "trailingSlash": false,

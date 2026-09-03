@@ -858,94 +858,39 @@ class WorkbenchView(QWidget):
 
         main.addWidget(preview_panel)
 
-        # ── Action Buttons Row: PRINT, WORD (.docx), PDF, PNG ──
+        # ── Single Output Action: Export as Word (.docx) ──
         actions = QHBoxLayout()
-        actions.setSpacing(12)
+        actions.setSpacing(16)
 
-        # Direct Print Button
-        self.btn_print = QPushButton("  PRINT  ")
-        self.btn_print.setFixedHeight(48)
-        self.btn_print.setMinimumWidth(160)
-        self.btn_print.setCursor(Qt.PointingHandCursor)
-        self.btn_print.setStyleSheet("""
-            QPushButton {
-                background-color: #10B981;
-                color: #FFFFFF;
-                border: none;
-                border-radius: 8px;
-                font-size: 15px;
-                font-weight: 800;
-                letter-spacing: 0.5px;
-            }
-            QPushButton:hover { background-color: #059669; }
-            QPushButton:disabled { background-color: #1E293B; color: #475569; }
-        """)
-        self.btn_print.setEnabled(False)
-        self.btn_print.clicked.connect(self.on_print)
-        actions.addWidget(self.btn_print)
-
-        # Microsoft Word (.docx) Export Button - The Old Word Technique
-        self.btn_export_docx = QPushButton("  Export Word (.docx)  ")
-        self.btn_export_docx.setFixedHeight(48)
+        self.btn_export_docx = QPushButton("  📄   Export as Word (.docx)  ")
+        self.btn_export_docx.setFixedHeight(50)
+        self.btn_export_docx.setMinimumWidth(220)
         self.btn_export_docx.setCursor(Qt.PointingHandCursor)
         self.btn_export_docx.setStyleSheet("""
             QPushButton {
                 background-color: #185ABD;
                 color: #FFFFFF;
-                border: 1px solid #2B579A;
-                border-radius: 8px;
-                font-size: 13px;
-                font-weight: 700;
-                padding: 0 16px;
+                border: none;
+                border-radius: 10px;
+                font-size: 14px;
+                font-weight: 800;
+                letter-spacing: 0.3px;
+                padding: 0 24px;
             }
             QPushButton:hover { background-color: #10458C; }
-            QPushButton:disabled { background-color: #1E293B; color: #475569; border-color: #1E1E26; }
+            QPushButton:disabled { background-color: #1E293B; color: #475569; }
         """)
         self.btn_export_docx.setEnabled(False)
         self.btn_export_docx.clicked.connect(self.on_export_docx)
         actions.addWidget(self.btn_export_docx)
 
-        # PDF Export
-        self.btn_export_pdf = QPushButton("Export PDF")
-        self.btn_export_pdf.setFixedHeight(46)
-        self.btn_export_pdf.setCursor(Qt.PointingHandCursor)
-        self.btn_export_pdf.setStyleSheet("""
-            QPushButton {
-                background-color: #1E293B;
-                color: #E2E8F0;
-                border: 1px solid #334155;
-                border-radius: 8px;
-                font-size: 13px;
-                font-weight: 700;
-                padding: 0 14px;
-            }
-            QPushButton:hover { background-color: #334155; }
-            QPushButton:disabled { color: #475569; border-color: #1E1E26; }
-        """)
-        self.btn_export_pdf.setEnabled(False)
-        self.btn_export_pdf.clicked.connect(self.on_export_pdf)
-        actions.addWidget(self.btn_export_pdf)
-
-        # Image (PNG) Export
-        self.btn_export_img = QPushButton("Export Image (PNG)")
-        self.btn_export_img.setFixedHeight(46)
-        self.btn_export_img.setCursor(Qt.PointingHandCursor)
-        self.btn_export_img.setStyleSheet("""
-            QPushButton {
-                background-color: #1E293B;
-                color: #E2E8F0;
-                border: 1px solid #334155;
-                border-radius: 8px;
-                font-size: 13px;
-                font-weight: 700;
-                padding: 0 14px;
-            }
-            QPushButton:hover { background-color: #334155; }
-            QPushButton:disabled { color: #475569; border-color: #1E1E26; }
-        """)
-        self.btn_export_img.setEnabled(False)
-        self.btn_export_img.clicked.connect(self.on_export_image)
-        actions.addWidget(self.btn_export_img)
+        # Placeholders for compatibility if referenced
+        self.btn_print = QPushButton()
+        self.btn_print.hide()
+        self.btn_export_pdf = QPushButton()
+        self.btn_export_pdf.hide()
+        self.btn_export_img = QPushButton()
+        self.btn_export_img.hide()
 
         actions.addStretch()
 
