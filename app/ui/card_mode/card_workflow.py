@@ -13,11 +13,13 @@ from PySide6.QtWidgets import (
     QStackedWidget,
     QPushButton,
     QFrame,
+    QDialog,
+    QLabel,
     QMessageBox,
 )
 
 from app.core.pipeline import FormatterPipeline
-from app.core.profiles import FormatProfile, CARD_PROFILE
+from app.core.profiles import FormatProfile, CARD_PROFILE, LONG_FORM_PROFILE
 from app.ui.components.step_indicator import StepIndicator
 from app.ui.card_mode.page_add_photos import PageAddPhotos
 from app.ui.card_mode.page_arrange import PageArrange
@@ -28,6 +30,145 @@ from app.ui.corner_editor import CornerEditorDialog
 from app.utils.logger import get_logger
 
 logger = get_logger("card_workflow")
+
+
+class CardTypeDialog(QDialog):
+    """
+    Modal dialog that requires the operator to explicitly choose between
+    Standard Card (86×54 mm) and Long Form (210×85 mm) before processing.
+    Each card type uses a distinct CV detection strategy.
+    """
+
+    def __init__(self, current_profile: FormatProfile, parent=None):
+        super().__init__(parent)
+        self.selected_profile: FormatProfile = current_profile
+        self.setWindowTitle("Select Card Type")
+        self.setModal(True)
+        self.setMinimumWidth(520)
+        self.setWindowFlag(Qt.WindowContextHelpButtonHint, False)
+        self.setStyleSheet("""
+            QDialog {
+                background-color: #0F0F14;
+                color: #FFFFFF;
+            }
+        """)
+        self._build_ui(current_profile)
+
+    def _build_ui(self, current_profile: FormatProfile):
+        root = QVBoxLayout(self)
+        root.setContentsMargins(36, 32, 36, 32)
+        root.setSpacing(24)
+
+        # ── Header ──
+        icon_lbl = QLabel("🪪")
+        icon_lbl.setStyleSheet("font-size: 32px; background: transparent;")
+        icon_lbl.setAlignment(Qt.AlignCenter)
+        root.addWidget(icon_lbl)
+
+        title = QLabel("What type of card are you processing?")
+        title.setStyleSheet(
+            "font-size: 18px; font-weight: 800; color: #FFFFFF;"
+            " background: transparent; letter-spacing: -0.3px;"
+        )
+        title.setAlignment(Qt.AlignCenter)
+        title.setWordWrap(True)
+        root.addWidget(title)
+
+        subtitle = QLabel(
+            "This selection determines the detection strategy and output dimensions."
+            " Each type uses a different algorithm — choosing correctly ensures the best result."
+        )
+        subtitle.setStyleSheet("font-size: 12px; color: #64748B; background: transparent;")
+        subtitle.setAlignment(Qt.AlignCenter)
+        subtitle.setWordWrap(True)
+        root.addWidget(subtitle)
+
+        # ── Separator ──
+        sep = QFrame()
+        sep.setFixedHeight(1)
+        sep.setStyleSheet("background: #1E293B;")
+        root.addWidget(sep)
+
+        # ── Card Type Buttons ──
+        btn_row = QHBoxLayout()
+        btn_row.setSpacing(16)
+
+        self.btn_standard = self._make_type_btn(
+            "🪪  Standard Card",
+            "86 × 54 mm",
+            "CR80 / business card / ID card format.",
+            accent="#2563EB",
+        )
+        self.btn_standard.setChecked(current_profile.id == CARD_PROFILE.id)
+        self.btn_standard.clicked.connect(lambda: self._select(CARD_PROFILE))
+
+        self.btn_long = self._make_type_btn(
+            "📄  Long Form",
+            "210 × 85 mm",
+            "Extended card with header band (e.g. government ID top strip).",
+            accent="#7C3AED",
+        )
+        self.btn_long.setChecked(current_profile.id == LONG_FORM_PROFILE.id)
+        self.btn_long.clicked.connect(lambda: self._select(LONG_FORM_PROFILE))
+
+        btn_row.addWidget(self.btn_standard)
+        btn_row.addWidget(self.btn_long)
+        root.addLayout(btn_row)
+
+        # ── Confirm Button ──
+        self.btn_confirm = QPushButton("Confirm \u0026 Start Processing  →")
+        self.btn_confirm.setFixedHeight(48)
+        self.btn_confirm.setCursor(Qt.PointingHandCursor)
+        self.btn_confirm.setStyleSheet("""
+            QPushButton {
+                background-color: #2563EB;
+                color: #FFFFFF;
+                border: none;
+                border-radius: 10px;
+                font-size: 14px;
+                font-weight: 800;
+                letter-spacing: 0.2px;
+            }
+            QPushButton:hover { background-color: #1D4ED8; }
+        """)
+        self.btn_confirm.clicked.connect(self.accept)
+        root.addWidget(self.btn_confirm)
+
+    def _make_type_btn(self, name: str, dims: str, desc: str, accent: str) -> QPushButton:
+        btn = QPushButton(f"{name}\n{dims}\n{desc}")
+        btn.setCheckable(True)
+        btn.setCursor(Qt.PointingHandCursor)
+        btn.setFixedHeight(110)
+        btn.setMinimumWidth(200)
+        btn.setStyleSheet(f"""
+            QPushButton {{
+                background-color: #14141A;
+                color: #94A3B8;
+                border: 2px solid #24242E;
+                border-radius: 12px;
+                font-size: 13px;
+                font-weight: 700;
+                line-height: 1.5;
+                text-align: center;
+            }}
+            QPushButton:hover {{
+                border-color: {accent};
+                color: #FFFFFF;
+                background-color: #1A1A24;
+            }}
+            QPushButton:checked {{
+                background-color: rgba(37, 99, 235, 0.12);
+                border-color: {accent};
+                border-width: 2px;
+                color: #FFFFFF;
+            }}
+        """)
+        return btn
+
+    def _select(self, profile: FormatProfile):
+        self.selected_profile = profile
+        self.btn_standard.setChecked(profile.id == CARD_PROFILE.id)
+        self.btn_long.setChecked(profile.id == LONG_FORM_PROFILE.id)
 
 
 class CardWorkflow(QWidget):
@@ -41,6 +182,8 @@ class CardWorkflow(QWidget):
         self.back_path: Optional[str] = None
         self.active_profile: FormatProfile = self.pipeline.active_card_profile
 
+        # True once the operator has explicitly confirmed a card type for this job.
+        self._profile_confirmed: bool = False
         self._init_ui()
 
     def _init_ui(self):
@@ -224,6 +367,19 @@ class CardWorkflow(QWidget):
 
     def _on_continue_clicked(self):
         curr = self.pages_stack.currentIndex()
+        if curr == 1 and not self._profile_confirmed:
+            # Step 2 → Step 3: Always ask the operator to confirm the card type.
+            # This is the gate that selects the correct CV detection strategy.
+            dlg = CardTypeDialog(self.active_profile, parent=self)
+            if dlg.exec() != QDialog.Accepted:
+                return  # User cancelled – stay on Arrange.
+            chosen = dlg.selected_profile
+            if chosen.id != self.active_profile.id:
+                self.active_profile = chosen
+                self.pipeline.set_card_profile(chosen)
+                # Keep the Arrange page UI in sync.
+                self.page_2.set_data(self.front_path, self.back_path, chosen)
+            self._profile_confirmed = True
         if curr < 4:
             self._go_to_step(curr + 1)
 
@@ -261,6 +417,7 @@ class CardWorkflow(QWidget):
         """Resets the Card Mode workflow to clean initial state."""
         self.front_path = None
         self.back_path = None
+        self._profile_confirmed = False  # require card-type selection on next job
         self.pipeline.reset()
         self.page_1.set_files(None, None)
         self._go_to_step(0)

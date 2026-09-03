@@ -80,12 +80,23 @@ class OpenCVDetector(DocumentDetector):
         # Dilate foreground to fill blank-paper gaps between content lines
         # within the document. This makes the enclosure metric robust against
         # fragmented content (e.g., a Long Form with dark header bands).
-        kernel_size = max(15, int(0.02 * min(h_sc, w_sc)))
+        # Long Form cards (~2.47:1 aspect) need a wider dilation kernel to bridge
+        # the larger blank-paper strips between the header band and the text body.
+        is_long_form = (
+            profile is not None
+            and hasattr(profile, "aspect_ratio")
+            and float(profile.aspect_ratio) >= 2.0
+        )
+        if is_long_form:
+            # Use a much larger dilation to fuse the fragmented content bands.
+            kernel_size = max(35, int(0.06 * min(h_sc, w_sc)))
+        else:
+            kernel_size = max(15, int(0.02 * min(h_sc, w_sc)))
         kernel_size = kernel_size | 1  # ensure odd
         fg_dil = cv2.dilate(fg_mask,
                             cv2.getStructuringElement(cv2.MORPH_RECT,
                                                       (kernel_size, kernel_size)),
-                            iterations=1)
+                            iterations=2 if is_long_form else 1)
         total_fg_dil = int(cv2.countNonZero(fg_dil))
 
         # 3. Generate candidate quadrilaterals from multiple strategies.
@@ -439,17 +450,29 @@ class OpenCVDetector(DocumentDetector):
         #    Aspect prior: uses the expected format to prefer the right shape.
         #    Area/leak: prevent swallowing the whole frame or bleeding to bg.
         using_profile = profile is not None
-        if using_profile:
-            # When a format profile is active, the shape (aspect) prior is the
-            # PRIMARY term: it selects the quad whose Euclidean geometry matches
-            # the document's true elongated aspect (e.g. Long Form ~2.47:1),
-            # instead of a near-square box that wraps scattered noise and would
-            # be stretched to wrong proportions. Enclosure stays important but
-            # is unreliable for rotated close-up documents where the projection
-            # is near-square while the true Euclidean shape is elongated.
+        is_long_form_profile = (
+            using_profile
+            and hasattr(profile, "aspect_ratio")
+            and float(profile.aspect_ratio) >= 2.0
+        )
+        if is_long_form_profile:
+            # LONG FORM detection strategy:
+            # The aspect prior is the DOMINANT term (0.50 weight) because a
+            # long-form card (~2.47:1) has a very distinctive elongated shape.
+            # Any near-square quad can be immediately deprioritized by shape alone.
+            # Enclosure weight is lowered because the large blank area in the card
+            # band means enclosure scoring is noisier than for standard cards.
             w_enc, w_area, w_aspect, w_leak, w_geo, w_edge = \
-                0.26, 0.08, 0.40, -0.06, 0.12, 0.05
+                0.20, 0.06, 0.50, -0.05, 0.12, 0.07
+        elif using_profile:
+            # STANDARD CARD detection strategy (86×54mm, aspect ~1.59):
+            # The shape (aspect) prior is the PRIMARY term: selects the quad
+            # matching the expected compact rectangle, deprioritizing elongated
+            # noise bands that can look like long-form documents.
+            w_enc, w_area, w_aspect, w_leak, w_geo, w_edge = \
+                0.28, 0.10, 0.38, -0.06, 0.12, 0.05
         else:
+            # No profile provided: fall back to enclosure-dominant mode.
             w_enc, w_area, w_aspect, w_leak, w_geo, w_edge = \
                 0.52, 0.14, 0.12, -0.10, 0.08, 0.05
         score = (
@@ -543,19 +566,40 @@ class OpenCVDetector(DocumentDetector):
         aspect = self._aspect(corners)
         if profile is not None and hasattr(profile, "aspect_ratio"):
             target = float(profile.aspect_ratio)
-            # Smooth falloff: reward quads close to the expected format,
-            # without forcing every quad into exactly the target ratio.
+            is_long_form = target >= 2.0
             ratio = aspect / max(target, 1e-5)
-            if 0.80 <= ratio <= 1.25:
-                return 1.0
-            elif 0.65 <= ratio <= 1.5:
-                return 0.8
-            elif 0.5 <= ratio <= 2.0:
-                return 0.55
+            if is_long_form:
+                # Long Form (~2.47:1): tight acceptance band — elongated quads only.
+                # A near-square quad (ratio < 0.70) is strongly penalized so it
+                # cannot beat a genuinely elongated boundary even on enclosure.
+                if 0.78 <= ratio <= 1.22:
+                    return 1.0
+                elif 0.60 <= ratio <= 1.40:
+                    return 0.70
+                elif 0.45 <= ratio <= 1.80:
+                    return 0.40
+                else:
+                    return 0.10  # strongly reject obviously-wrong shape
             else:
-                return 0.3
-        # No profile: use a mild, broad guide.
-        lo, hi = (1.2, 3.0) if is_card else (1.0, 3.0)
+                # Standard Card (~1.59:1): reward compact rectangle shapes.
+                if 0.82 <= ratio <= 1.22:
+                    return 1.0
+                elif 0.68 <= ratio <= 1.45:
+                    return 0.75
+                elif 0.52 <= ratio <= 1.80:
+                    return 0.50
+                else:
+                    return 0.25
+        # No profile: differentiate by card vs sheet.
+        if is_card:
+            # Standard card heuristic (86×54mm ~ 1.59:1 landscape).
+            if 1.35 <= aspect <= 1.85:
+                return 1.0
+            elif 1.1 <= aspect <= 2.2:
+                return 0.7
+            return 0.35
+        # Document sheet: broader tolerance.
+        lo, hi = 1.0, 3.0
         if lo <= aspect <= hi:
             return 1.0
         elif lo * 0.6 <= aspect <= hi * 1.4:
