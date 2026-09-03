@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>QenBel Smart Formatter — Automated Print-Ready Document & Card Formatting</title>
+  <meta name="description" content="Download QenBel Smart Formatter for Windows. Crop, align, perspective-correct ID cards and documents, and export to print-ready Microsoft Word (.docx) and PDF.">
+  <link rel="icon" type="image/x-icon" href="assets/app_icon.ico">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- Background Grid Effect -->
+  <div class="bg-grid"></div>
+  <div class="bg-glow"></div>
+
+  <!-- Navigation Bar -->
+  <nav class="navbar" id="navbar">
+    <div class="nav-container">
+      <a href="#" class="nav-brand">
+        <span class="brand-logo-mark">Q</span>
+        <span class="brand-name">QENBEL <span class="brand-sub">SMART FORMATTER</span></span>
+      </a>
+      <div class="nav-links">
+        <a href="#features">Features</a>
+        <a href="#workflow">Workflow</a>
+        <a href="#specs">Specifications</a>
+        <a href="https://github.com/adminqenbel/smartformatter" target="_blank" class="github-link">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+          GitHub
+        </a>
+        <a href="#download" class="btn-nav-download">Download v2.0</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Hero Section -->
+  <header class="hero-section">
+    <div class="container hero-content">
+      <div class="badge-pill">
+        <span class="badge-dot"></span>
+        <span class="badge-text">QENBEL SMART FORMATTER V2.0 • WINDOWS 64-BIT</span>
+      </div>
+      <h1 class="hero-title">
+        The Precision Document & ID Card Formatter for Print Shops.
+      </h1>
+      <p class="hero-subtitle">
+        Automatically detect corners, eliminate perspective distortion, align Front & Back sides, and export directly to Microsoft Word (.docx) or print sheets in 1-click.
+      </p>
+
+      <!-- Download Action Box -->
+      <div class="download-card" id="download">
+        <div class="download-card-inner">
+          <div class="download-icon-box">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          </div>
+          <div class="download-info">
+            <h3 class="download-heading">QenBel Smart Formatter Setup</h3>
+            <p class="download-meta">Windows 10 / 11 (64-bit)  •  Version 2.0.4  •  93.2 MB  •  Self-contained Installer</p>
+          </div>
+          <div class="download-cta-group">
+            <a href="downloads/QenBel-Smart-Formatter-Setup.exe" class="btn-primary-download" id="downloadBtn">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              <span>Download Installer (.exe)</span>
+            </a>
+            <a href="https://github.com/adminqenbel/smartformatter/releases" target="_blank" class="btn-secondary-mirror">
+              GitHub Releases ↗
+            </a>
+          </div>
+        </div>
+        <div class="download-footer">
+          <span class="security-badge">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+            100% Offline & Private  •  No Telemetry  •  Standard Inno Setup Packaging
+          </span>
+          <span class="checksum-text" id="checksumToggle">SHA-256 Verified</span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Interactive Workflow Comparison Mockup -->
+  <section class="demo-section" id="workflow">
+    <div class="container">
+      <div class="section-head">
+        <span class="section-tag">WORKFLOW PREVIEW</span>
+        <h2 class="section-title">Original Capture vs. Print-Ready Card</h2>
+        <p class="section-subtitle">Real-time side-by-side inspection with dedicated Front & Back switching.</p>
+      </div>
+
+      <div class="mockup-window">
+        <div class="mockup-titlebar">
+          <div class="window-dots">
+            <span class="dot dot-close"></span>
+            <span class="dot dot-min"></span>
+            <span class="dot dot-max"></span>
+          </div>
+          <span class="mockup-title">QenBel Smart Formatter — Production Workbench</span>
+          <div class="mockup-side-toggles">
+            <button class="mockup-toggle-btn active-front" id="btnDemoFront">● FRONT SIDE</button>
+            <button class="mockup-toggle-btn" id="btnDemoBack">● BACK SIDE</button>
+          </div>
+        </div>
+
+        <div class="mockup-canvas">
+          <div class="mockup-card original-card">
+            <div class="card-bar">
+              <span class="card-bar-title" id="demoOrigTitle">ORIGINAL CAPTURE (FRONT)</span>
+              <span class="card-bar-dim">Raw: 1600 × 1200 px</span>
+            </div>
+            <div class="card-body">
+              <div class="raw-photo-placeholder" id="demoOrigBody">
+                <div class="perspective-distortion-indicator">
+                  <div class="warp-quad"></div>
+                  <span class="indicator-label">Tilted Phone Photo / Skewed Perspective</span>
+                </div>
+              </div>
+            </div>
+            <div class="card-footer">
+              <span>Raw photograph as captured by operator</span>
+            </div>
+          </div>
+
+          <div class="mockup-divider">
+            <div class="divider-arrow">➔</div>
+          </div>
+
+          <div class="mockup-card formatted-card">
+            <div class="card-bar">
+              <span class="card-bar-title" id="demoFormatTitle">FORMATTED & PRINT-READY (FRONT)</span>
+              <span class="card-bar-dim">210 × 85 mm @ 300 DPI</span>
+            </div>
+            <div class="card-body">
+              <div class="straightened-card-placeholder" id="demoFormatBody">
+                <div class="card-chip">
+                  <span class="chip-label">PRINT NORMALIZED</span>
+                  <span class="chip-status">✓ Orthogonal Quad Straightened</span>
+                </div>
+                <div class="card-sim-lines">
+                  <div class="sim-line line-wide"></div>
+                  <div class="sim-line line-med"></div>
+                  <div class="sim-line line-narrow"></div>
+                </div>
+              </div>
+            </div>
+            <div class="card-footer actions-footer">
+              <span class="action-tag">✏ Edit Corners</span>
+              <span class="action-tag">↶ 90°</span>
+              <span class="action-tag">↷ 90°</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Core Features Grid -->
+  <section class="features-section" id="features">
+    <div class="container">
+      <div class="section-head">
+        <span class="section-tag">ENGINEERING ADVANTAGES</span>
+        <h2 class="section-title">Built for Speed and Reliability</h2>
+        <p class="section-subtitle">Zero bloat, instant processing, and dedicated print shop tools.</p>
+      </div>
+
+      <div class="features-grid">
+        <div class="feature-box">
+          <div class="feature-num">01</div>
+          <h3 class="feature-title">Dual-Side Multi-Upload</h3>
+          <p class="feature-desc">Drag or select two photographs at once. The application automatically maps `photo[0]` to Front and `photo[1]` to Back with 1-click swap.</p>
+        </div>
+
+        <div class="feature-box">
+          <div class="feature-num">02</div>
+          <h3 class="feature-title">Non-Recursive Corner Editor</h3>
+          <p class="feature-desc">Fine-tune card quad boundaries using interactive corner pins and mid-edge sliders with re-entrancy protection for zero crash editing.</p>
+        </div>
+
+        <div class="feature-box">
+          <div class="feature-num">03</div>
+          <h3 class="feature-title">The Classic Word (.docx) Exporter</h3>
+          <p class="feature-desc">Direct 1-click generation of Microsoft Word `.docx` documents calibrated to standard print millimeter specifications.</p>
+        </div>
+
+        <div class="feature-box">
+          <div class="feature-num">04</div>
+          <h3 class="feature-title">Native Windows Printing</h3>
+          <p class="feature-desc">Sends formatted print sheets directly to thermal card printers, laser, or inkjet machines without driver margin clipping.</p>
+        </div>
+
+        <div class="feature-box">
+          <div class="feature-num">05</div>
+          <h3 class="feature-title">100% Offline & Private</h3>
+          <p class="feature-desc">Everything processes strictly on-device using local OpenCV and ONNX runtimes. No cloud dependency and no operator data leakage.</p>
+        </div>
+
+        <div class="feature-box">
+          <div class="feature-num">06</div>
+          <h3 class="feature-title">Dual Processing Modes</h3>
+          <p class="feature-desc">Switch seamlessly between Card Mode (Standard 86×54 mm & Long Form 210×85 mm) and Multi-Page Document Mode.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- System Specifications -->
+  <section class="specs-section" id="specs">
+    <div class="container">
+      <div class="section-head">
+        <span class="section-tag">SYSTEM SPECIFICATIONS</span>
+        <h2 class="section-title">Hardware & Environment</h2>
+      </div>
+
+      <div class="specs-table-container">
+        <table class="specs-table">
+          <tbody>
+            <tr>
+              <td class="spec-label">Operating System</td>
+              <td class="spec-value">Windows 10 (Build 1809+) or Windows 11 (64-bit Architecture)</td>
+            </tr>
+            <tr>
+              <td class="spec-label">Runtime Bundling</td>
+              <td class="spec-value">Fully standalone bundle (Includes Python 3.11, PySide6, OpenCV, ONNX Runtime)</td>
+            </tr>
+            <tr>
+              <td class="spec-label">Memory Requirements</td>
+              <td class="spec-value">Minimum 4 GB RAM (8 GB Recommended for multi-page batch scanning)</td>
+            </tr>
+            <tr>
+              <td class="spec-label">Export Formats</td>
+              <td class="spec-value">Microsoft Word (.docx), PDF Document (.pdf), High-Resolution Image (.png)</td>
+            </tr>
+            <tr>
+              <td class="spec-label">Installer Footprint</td>
+              <td class="spec-value">~97.8 MB Setup File  •  Inno Setup 6 Verified Clean Build</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="site-footer">
+    <div class="container footer-content">
+      <div class="footer-left">
+        <div class="footer-brand">QENBEL SMART FORMATTER</div>
+        <p class="footer-copy">© 2026 QenBel Technologies. High-performance desktop document imaging.</p>
+      </div>
+      <div class="footer-right">
+        <a href="https://github.com/adminqenbel/smartformatter" target="_blank" class="footer-link">GitHub Repository</a>
+        <a href="#download" class="footer-link">Download Installer</a>
+        <a href="#workflow" class="footer-link">Workbench Architecture</a>
+      </div>
+    </div>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
