@@ -30,13 +30,15 @@ class DocxExporter:
         cls,
         card_pair: CardPair,
         output_path: Union[str, Path],
-        layout: str = "side_by_side"
+        layout: str = "auto",  # "auto", "side_by_side", "stacked"
+        custom_width_cm: Optional[float] = None,
+        custom_height_cm: Optional[float] = None,
     ) -> bool:
         """
         Exports Front and Back cards to a print-ready Microsoft Word (.docx) document.
         Always uses standard A4 portrait page layout (210 x 297 mm).
-        Cards occupy strictly their respective physical/proportional dimensions at the top
-        of the page (side-by-side), leaving the remaining page blank (NOT stretched full page).
+        Supports custom width/height adjustments and auto layout (Stacked for Long Form,
+        Side-by-side for Standard Cards). Zero text or labels rendered on the page.
         """
         out_file = Path(output_path)
         out_file.parent.mkdir(parents=True, exist_ok=True)
@@ -74,66 +76,95 @@ class DocxExporter:
                     back_tmp = tmp_path / "back_card.png"
                     cv2.imwrite(str(back_tmp), back_img)
 
-                # Determine card dimensions based on active profile:
-                # - Standard Card: 86 x 54 mm (exact real-world size: 8.6 cm x 5.4 cm)
-                # - Long Form: 210 x 85 mm (aspect 2.47:1) -> fits side-by-side across A4 at 9.1 cm x 3.68 cm each
                 is_long_form = (profile.id == "long_form" or profile.aspect_ratio >= 2.0)
+                ref_img = front_img if front_img is not None else back_img
                 is_portrait = False
-                if front_img is not None:
-                    is_portrait = front_img.shape[0] > front_img.shape[1]
-                elif back_img is not None:
-                    is_portrait = back_img.shape[0] > back_img.shape[1]
+                img_aspect = profile.aspect_ratio
+                if ref_img is not None:
+                    ih, iw = ref_img.shape[:2]
+                    is_portrait = (ih > iw)
+                    img_aspect = iw / max(ih, 1)
+
+                # Determine effective layout:
+                # - Portrait Long Form (8.5 x 21 cm): fits side-by-side naturally (8.5 + 8.5 = 17 cm <= 18.6 cm usable)
+                # - Landscape Long Form (21 x 8.5 cm): stacked fits full page width (~18.5 cm wide each)
+                # - Standard Cards: side-by-side
+                if layout == "auto":
+                    if is_long_form:
+                        effective_layout = "side_by_side" if is_portrait else "stacked"
+                    else:
+                        effective_layout = "side_by_side"
+                else:
+                    effective_layout = layout
+
+                # Determine dimensions strictly preserving the image's native aspect ratio
+                if custom_width_cm is not None and custom_width_cm > 0:
+                    card_w = Cm(custom_width_cm)
+                    if custom_height_cm is not None and custom_height_cm > 0:
+                        card_h = Cm(custom_height_cm)
+                    else:
+                        card_h = Cm(round(custom_width_cm / max(img_aspect, 1e-3), 2))
+                else:
+                    # Default physical dimensions
+                    if is_long_form:
+                        if is_portrait:
+                            # Vertical Aadhaar letter cut-slip (85 x 210 mm)
+                            card_w = Cm(8.5)
+                            card_h = Cm(round(8.5 / max(img_aspect, 1e-3), 2))
+                        else:
+                            # Horizontal Aadhaar letter cut-slip (210 x 85 mm)
+                            if effective_layout == "stacked":
+                                card_w = Cm(18.5)
+                                card_h = Cm(round(18.5 / max(img_aspect, 1e-3), 2))
+                            else:
+                                card_w = Cm(9.1)
+                                card_h = Cm(round(9.1 / max(img_aspect, 1e-3), 2))
+                    elif is_portrait:
+                        card_w = Cm(min(profile.width_mm, profile.height_mm) / 10.0)
+                        card_h = Cm(max(profile.width_mm, profile.height_mm) / 10.0)
+                    else:
+                        card_w = Cm(max(profile.width_mm, profile.height_mm) / 10.0)
+                        card_h = Cm(min(profile.width_mm, profile.height_mm) / 10.0)
 
                 if front_tmp and back_tmp:
-                    if is_long_form:
-                        # Long Form side-by-side: each takes half usable width (9.1 cm x 3.68 cm)
-                        card_w = Cm(9.1)
-                        card_h = Cm(round(9.1 / max(profile.aspect_ratio, 1e-3), 2))
-                    elif is_portrait:
-                        card_w = Cm(profile.height_mm / 10.0)
-                        card_h = Cm(profile.width_mm / 10.0)
+                    if effective_layout == "side_by_side":
+                        # 2-column borderless table
+                        table = doc.add_table(rows=1, cols=2)
+                        table.alignment = WD_TABLE_ALIGNMENT.CENTER
+                        table.autofit = False
+
+                        cell_left = table.cell(0, 0)
+                        cell_left.width = Cm(usable_w_cm / 2.0)
+                        p_left = cell_left.paragraphs[0]
+                        p_left.alignment = WD_ALIGN_PARAGRAPH.CENTER
+                        p_left.paragraph_format.space_before = Pt(0)
+                        p_left.paragraph_format.space_after = Pt(0)
+                        p_left.add_run().add_picture(str(front_tmp), width=card_w, height=card_h)
+
+                        cell_right = table.cell(0, 1)
+                        cell_right.width = Cm(usable_w_cm / 2.0)
+                        p_right = cell_right.paragraphs[0]
+                        p_right.alignment = WD_ALIGN_PARAGRAPH.CENTER
+                        p_right.paragraph_format.space_before = Pt(0)
+                        p_right.paragraph_format.space_after = Pt(0)
+                        p_right.add_run().add_picture(str(back_tmp), width=card_w, height=card_h)
                     else:
-                        # Standard Card: exact physical size 8.6 cm x 5.4 cm
-                        card_w = Cm(profile.width_mm / 10.0)
-                        card_h = Cm(profile.height_mm / 10.0)
+                        # Stacked layout (Front top, Back bottom) - Ideal for Long Form Aadhaar
+                        p_top = doc.add_paragraph()
+                        p_top.alignment = WD_ALIGN_PARAGRAPH.CENTER
+                        p_top.paragraph_format.space_before = Pt(0)
+                        p_top.paragraph_format.space_after = Pt(14)
+                        p_top.add_run().add_picture(str(front_tmp), width=card_w, height=card_h)
 
-                    # 2-column borderless table for side-by-side layout (NO text/labels)
-                    table = doc.add_table(rows=1, cols=2)
-                    table.alignment = WD_TABLE_ALIGNMENT.CENTER
-                    table.autofit = False
-
-                    # Left cell: FRONT image only
-                    cell_left = table.cell(0, 0)
-                    cell_left.width = Cm(usable_w_cm / 2.0)
-                    p_left = cell_left.paragraphs[0]
-                    p_left.alignment = WD_ALIGN_PARAGRAPH.CENTER
-                    p_left.paragraph_format.space_before = Pt(0)
-                    p_left.paragraph_format.space_after = Pt(0)
-                    p_left.add_run().add_picture(str(front_tmp), width=card_w, height=card_h)
-
-                    # Right cell: BACK image only
-                    cell_right = table.cell(0, 1)
-                    cell_right.width = Cm(usable_w_cm / 2.0)
-                    p_right = cell_right.paragraphs[0]
-                    p_right.alignment = WD_ALIGN_PARAGRAPH.CENTER
-                    p_right.paragraph_format.space_before = Pt(0)
-                    p_right.paragraph_format.space_after = Pt(0)
-                    p_right.add_run().add_picture(str(back_tmp), width=card_w, height=card_h)
+                        p_bot = doc.add_paragraph()
+                        p_bot.alignment = WD_ALIGN_PARAGRAPH.CENTER
+                        p_bot.paragraph_format.space_before = Pt(0)
+                        p_bot.paragraph_format.space_after = Pt(0)
+                        p_bot.add_run().add_picture(str(back_tmp), width=card_w, height=card_h)
 
                 elif front_tmp or back_tmp:
-                    # Single side present (NO text/labels)
+                    # Single side present
                     active_tmp = front_tmp or back_tmp
-
-                    if is_long_form:
-                        card_w = Cm(18.5)
-                        card_h = Cm(round(18.5 / max(profile.aspect_ratio, 1e-3), 2))
-                    elif is_portrait:
-                        card_w = Cm(profile.height_mm / 10.0)
-                        card_h = Cm(profile.width_mm / 10.0)
-                    else:
-                        card_w = Cm(profile.width_mm / 10.0)
-                        card_h = Cm(profile.height_mm / 10.0)
-
                     p = doc.add_paragraph()
                     p.alignment = WD_ALIGN_PARAGRAPH.CENTER
                     p.paragraph_format.space_before = Pt(0)

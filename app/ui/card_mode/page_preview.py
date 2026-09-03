@@ -59,6 +59,13 @@ class CardCanvas(QScrollArea):
         self._raw_pixmap: Optional[QPixmap] = None
         self._zoom: float = 1.0
 
+    clicked = Signal()
+
+    def mousePressEvent(self, event):
+        if event.button() == Qt.LeftButton:
+            self.clicked.emit()
+        super().mousePressEvent(event)
+
     def set_image(self, bgr_img: Optional[np.ndarray]):
         if bgr_img is None:
             self._raw_pixmap = None
@@ -119,6 +126,7 @@ class PagePreview(QWidget):
         super().__init__(parent)
         self.pipeline = pipeline
         self.layout_engine = PrintLayoutEngine()
+        self._active_preview_side = "front"
         self._active_edit_side = "front"
 
         self._init_ui()
@@ -144,13 +152,33 @@ class PagePreview(QWidget):
         top_row.addLayout(title_box)
         top_row.addStretch()
 
-        self.combo_preview_side = QComboBox()
-        self.combo_preview_side.addItem("Preview Front", "front")
-        self.combo_preview_side.addItem("Preview Back", "back")
-        self.combo_preview_side.setFixedHeight(32)
-        self.combo_preview_side.setStyleSheet(self._btn_style())
-        self.combo_preview_side.currentIndexChanged.connect(self._on_preview_side_changed)
-        top_row.addWidget(self.combo_preview_side)
+        self.btn_toggle_side = QPushButton("👁  Preview: FRONT  ⇄")
+        self.btn_toggle_side.setCursor(Qt.PointingHandCursor)
+        self.btn_toggle_side.setFixedHeight(34)
+        self.btn_toggle_side.setMinimumWidth(160)
+        self.btn_toggle_side.setStyleSheet("""
+            QPushButton {
+                background-color: #1E293B;
+                color: #38BDF8;
+                border: 1px solid #334155;
+                border-radius: 8px;
+                padding: 0 14px;
+                font-size: 12px;
+                font-weight: 700;
+            }
+            QPushButton:hover {
+                background-color: #2563EB;
+                border-color: #38BDF8;
+                color: #FFFFFF;
+            }
+            QPushButton:disabled {
+                background-color: #14141A;
+                color: #64748B;
+                border-color: #24242E;
+            }
+        """)
+        self.btn_toggle_side.clicked.connect(self._on_toggle_side_clicked)
+        top_row.addWidget(self.btn_toggle_side)
 
         self.lbl_metrics = QLabel("—")
         self.lbl_metrics.setStyleSheet("font-size: 12px; font-weight: 600; color: #94A3B8; background: transparent;")
@@ -280,6 +308,7 @@ class PagePreview(QWidget):
 
         # ── Canvas Area ──
         self.canvas = CardCanvas(self)
+        self.canvas.clicked.connect(self._on_toggle_side_clicked)
         main_layout.addWidget(self.canvas, stretch=1)
 
     def _btn_style(self):
@@ -306,6 +335,25 @@ class PagePreview(QWidget):
         d.setStyleSheet("background-color: #2A2A36; border: none;")
         return d
 
+    def _on_toggle_side_clicked(self):
+        """Toggles between previewing Front and Back side on a single click."""
+        entry = self.pipeline.card_entry
+        if not entry or entry.is_empty():
+            return
+        f_proc = entry.front
+        b_proc = entry.back
+        if f_proc is not None and b_proc is not None:
+            self._active_preview_side = "back" if self._active_preview_side == "front" else "front"
+        elif f_proc is not None:
+            self._active_preview_side = "front"
+        elif b_proc is not None:
+            self._active_preview_side = "back"
+
+        rot_idx = 0 if self._active_preview_side == "front" else 1
+        if self.combo_rotate_side.count() > rot_idx:
+            self.combo_rotate_side.setCurrentIndex(rot_idx)
+        self.refresh_preview()
+
     def refresh_preview(self):
         entry = self.pipeline.card_entry
         if entry is None or entry.is_empty():
@@ -314,7 +362,7 @@ class PagePreview(QWidget):
             self.btn_edit_front.setEnabled(False)
             self.btn_edit_back.setEnabled(False)
             self.btn_swap.setEnabled(False)
-            self.combo_preview_side.setEnabled(False)
+            self.btn_toggle_side.setEnabled(False)
             self.combo_rotate_side.setEnabled(False)
             return
 
@@ -324,16 +372,22 @@ class PagePreview(QWidget):
         b_img = b_proc.final_image if b_proc is not None else None
         profile = entry.format_profile or self.pipeline.active_card_profile
 
-        # Preview and edit one side at a time.  The final Print page is the
-        # single place that renders the required side-by-side output layout.
-        selected_side = self.combo_preview_side.currentData() or "front"
-        if selected_side == "front" and f_img is None and b_img is not None:
-            self.combo_preview_side.setCurrentIndex(1)
-            selected_side = "back"
-        elif selected_side == "back" and b_img is None and f_img is not None:
-            self.combo_preview_side.setCurrentIndex(0)
-            selected_side = "front"
-        preview_img = f_img if selected_side == "front" else b_img
+        # Fallback if selected side has no image
+        if self._active_preview_side == "front" and f_img is None and b_img is not None:
+            self._active_preview_side = "back"
+        elif self._active_preview_side == "back" and b_img is None and f_img is not None:
+            self._active_preview_side = "front"
+
+        side_label = "FRONT" if self._active_preview_side == "front" else "BACK"
+        has_both = bool(f_img is not None and b_img is not None)
+        self.btn_toggle_side.setEnabled(has_both)
+        if has_both:
+            self.btn_toggle_side.setText(f"👁  Preview: {side_label}  ⇄")
+            self.btn_toggle_side.setToolTip("Click to toggle preview between Front and Back sides")
+        else:
+            self.btn_toggle_side.setText(f"👁  Preview: {side_label}")
+
+        preview_img = f_img if self._active_preview_side == "front" else b_img
 
         # Render the selected normalized side at its exact physical size.
         rendered, metrics = self.layout_engine.render_pair(
@@ -349,18 +403,13 @@ class PagePreview(QWidget):
 
         self.btn_edit_front.setEnabled(bool(f_proc and f_proc.final_image is not None))
         self.btn_edit_back.setEnabled(bool(b_proc and b_proc.final_image is not None))
-        self.btn_swap.setEnabled(bool(f_img is not None and b_img is not None))
-        self.combo_preview_side.setEnabled(bool(f_proc or b_proc))
+        self.btn_swap.setEnabled(has_both)
         self.combo_rotate_side.setEnabled(bool(f_proc or b_proc))
         self.combo_rotate_side.model().item(0).setEnabled(f_proc is not None)
         self.combo_rotate_side.model().item(1).setEnabled(b_proc is not None)
-        if f_proc is None and b_proc is not None:
-            self.combo_rotate_side.setCurrentIndex(1)
-
-    def _on_preview_side_changed(self, index: int):
-        """Keep the rotate target aligned with the side being inspected."""
-        self.combo_rotate_side.setCurrentIndex(index)
-        self.refresh_preview()
+        rot_idx = 0 if self._active_preview_side == "front" else 1
+        if self.combo_rotate_side.count() > rot_idx:
+            self.combo_rotate_side.setCurrentIndex(rot_idx)
 
     def _rotate_active_left(self):
         self._apply_rotation(-90)
@@ -372,7 +421,7 @@ class PagePreview(QWidget):
         entry = self.pipeline.card_entry
         if not entry:
             return
-        side = self.combo_rotate_side.currentData() or "front"
+        side = self.combo_rotate_side.currentData() or self._active_preview_side
         side_img = entry.front if side == "front" else entry.back
         if side_img is not None:
             self.pipeline.rotate_item(side_img, angle)

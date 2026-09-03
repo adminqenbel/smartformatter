@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>How to Use — QenBel Smart Formatter User Guide</title>
+  <meta name="description" content="Step-by-step user guide for QenBel Smart Formatter. Learn how to format ID cards, Aadhaar long forms, edit corners, and export to print-ready Word (.docx).">
+  <link rel="icon" type="image/x-icon" href="assets/app_icon.ico">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <style>
+    .guide-container {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 60px 24px 100px;
+    }
+    .guide-hero {
+      text-align: center;
+      margin-bottom: 50px;
+    }
+    .guide-title {
+      font-size: 42px;
+      font-weight: 800;
+      letter-spacing: -1px;
+      margin: 16px 0 12px;
+      color: var(--text-white);
+    }
+    .guide-desc {
+      font-size: 17px;
+      color: var(--text-muted);
+      max-width: 680px;
+      margin: 0 auto;
+    }
+    .step-list {
+      display: flex;
+      flex-direction: column;
+      gap: 32px;
+      margin-top: 40px;
+    }
+    .step-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-dim);
+      border-radius: var(--radius-lg);
+      padding: 32px;
+      transition: border-color 0.2s ease, transform 0.2s ease;
+      position: relative;
+    }
+    .step-card:hover {
+      border-color: var(--border-bright);
+      transform: translateY(-2px);
+    }
+    .step-header {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+    .step-number {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 36px;
+      height: 36px;
+      background: #FFFFFF;
+      color: #000000;
+      font-weight: 800;
+      font-size: 15px;
+      border-radius: 50%;
+    }
+    .step-card-title {
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--text-white);
+    }
+    .step-body {
+      color: var(--text-dim);
+      font-size: 15px;
+      line-height: 1.7;
+    }
+    .step-body ul {
+      margin: 12px 0 0 20px;
+    }
+    .step-body li {
+      margin-bottom: 8px;
+    }
+    .step-pill-tag {
+      display: inline-block;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid var(--border-med);
+      color: #E2E8F0;
+      font-family: var(--font-mono);
+      font-size: 12px;
+      padding: 2px 8px;
+      border-radius: 4px;
+      margin-right: 6px;
+    }
+    .tip-box {
+      background: rgba(37, 99, 235, 0.08);
+      border: 1px solid rgba(37, 99, 235, 0.25);
+      border-radius: var(--radius-md);
+      padding: 16px 20px;
+      margin-top: 16px;
+      font-size: 14px;
+      color: #93C5FD;
+    }
+    .tip-title {
+      font-weight: 700;
+      margin-bottom: 4px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="bg-grid"></div>
+  <div class="bg-glow"></div>
+
+  <!-- Navigation Bar -->
+  <nav class="navbar" id="navbar">
+    <div class="nav-container">
+      <a href="index.html" class="nav-brand">
+        <span class="brand-logo-mark">Q</span>
+        <span class="brand-name">QENBEL <span class="brand-sub">SMART FORMATTER</span></span>
+      </a>
+      <div class="nav-links">
+        <a href="index.html">Home</a>
+        <a href="index.html#features">Features</a>
+        <a href="how-to-use.html" style="color: #FFFFFF; font-weight: 700;">How to Use</a>
+        <a href="https://github.com/adminqenbel/smartformatter" target="_blank" class="github-link">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+          GitHub
+        </a>
+        <a href="index.html#download" class="btn-nav-download">Download v2.0</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- User Guide Content -->
+  <main class="guide-container">
+    <header class="guide-hero">
+      <div class="badge-pill">
+        <span class="badge-dot"></span>
+        <span class="badge-text">USER MANUAL & WORKFLOW GUIDE</span>
+      </div>
+      <h1 class="guide-title">How to Use QenBel Smart Formatter</h1>
+      <p class="guide-desc">
+        Complete walkthrough for preparing ID cards, Aadhaar long forms, and documents for high-resolution, print-ready Word and PDF exports.
+      </p>
+    </header>
+
+    <div class="step-list">
+
+      <!-- Step 1 -->
+      <article class="step-card">
+        <div class="step-header">
+          <span class="step-number">1</span>
+          <h2 class="step-card-title">Step 1: Add Card Photographs</h2>
+        </div>
+        <div class="step-body">
+          <p>
+            Start by dragging and dropping photos of your document into the <strong>Front</strong> and <strong>Back</strong> upload slots, or click <strong>Browse</strong> to select files from your computer.
+          </p>
+          <ul>
+            <li>Supports <span class="step-pill-tag">.JPG</span> <span class="step-pill-tag">.PNG</span> <span class="step-pill-tag">.WEBP</span> <span class="step-pill-tag">.BMP</span> formats.</li>
+            <li>If processing a single-sided document, you can leave the back slot empty and continue.</li>
+            <li>Click <strong>Continue →</strong> to proceed to arrangement.</li>
+          </ul>
+        </div>
+      </article>
+
+      <!-- Step 2 -->
+      <article class="step-card">
+        <div class="step-header">
+          <span class="step-number">2</span>
+          <h2 class="step-card-title">Step 2: Arrange Sides & Select Output Format</h2>
+        </div>
+        <div class="step-body">
+          <p>
+            Confirm that the front and back sides are assigned correctly:
+          </p>
+          <ul>
+            <li>Click <strong>⇄ Swap</strong> if the front and back photos were loaded in reverse order.</li>
+            <li><strong>Select Output Format</strong>:
+              <ul>
+                <li><strong>Card (86 × 54 mm)</strong>: Standard ID-1 card dimensions for PAN cards, Voter IDs, Driving Licenses, PVC Aadhaar cards, and bank cards.</li>
+                <li><strong>Long Form (210 × 85 mm)</strong>: Specialized profile for Aadhaar letter bottom cut-slips.</li>
+              </ul>
+            </li>
+            <li>Click <strong>Process Card →</strong> to run automated edge detection and perspective warping.</li>
+          </ul>
+          <div class="tip-box">
+            <div class="tip-title">💡 Format Selection Tip</div>
+            Selecting the correct format in Step 2 activates the specialized detection algorithm tailored to that card's physical aspect ratio.
+          </div>
+        </div>
+      </article>
+
+      <!-- Step 3 -->
+      <article class="step-card">
+        <div class="step-header">
+          <span class="step-number">3</span>
+          <h2 class="step-card-title">Step 3: Automated Processing</h2>
+        </div>
+        <div class="step-body">
+          <p>
+            The software executes an ultra-fast computer vision pipeline:
+          </p>
+          <ul>
+            <li><strong>Foreground Isolation</strong>: Automatically segments hands, fingers, and background textures.</li>
+            <li><strong>Corner Quad Extraction</strong>: Finds the physical card edges using Hough line and component analysis.</li>
+            <li><strong>Perspective Rectification</strong>: Flattens angle distortion and skew into an upright, rectilinear document.</li>
+            <li><strong>Enhancement</strong>: Optimizes contrast, cleans up lighting unevenness, and sharpens micro-text.</li>
+          </ul>
+        </div>
+      </article>
+
+      <!-- Step 4 -->
+      <article class="step-card">
+        <div class="step-header">
+          <span class="step-number">4</span>
+          <h2 class="step-card-title">Step 4: Inspect Preview & Fine-Tune</h2>
+        </div>
+        <div class="step-body">
+          <p>
+            Inspect the processed result with powerful operator controls:
+          </p>
+          <ul>
+            <li><strong>Single-Click Front/Back Toggle</strong>: Click the top-right <span class="step-pill-tag">👁 Preview: FRONT ⇄</span> button (or click directly anywhere on the image) to seamlessly flip between Front and Back views.</li>
+            <li><strong>Rotation</strong>: Click <strong>↶ Rotate Left</strong> or <strong>↷ Rotate Right</strong> (90° increments). The system preserves exact native aspect ratios without squashing or quality degradation.</li>
+            <li><strong>Edit Corners</strong>: Click <strong>Edit Front Corners</strong> or <strong>Edit Back Corners</strong> to drag the 4 corner handles manually if the card had damaged edges or extreme glare.</li>
+            <li><strong>Zoom & Pan</strong>: Use the zoom controls (<span class="step-pill-tag">＋</span>, <span class="step-pill-tag">－</span>, <span class="step-pill-tag">Fit</span>) to inspect text clarity and barcode readability.</li>
+          </ul>
+        </div>
+      </article>
+
+      <!-- Step 5 -->
+      <article class="step-card">
+        <div class="step-header">
+          <span class="step-number">5</span>
+          <h2 class="step-card-title">Step 5: Export to Print-Ready Microsoft Word (.docx)</h2>
+        </div>
+        <div class="step-body">
+          <p>
+            Configure your output print sheet and export directly:
+          </p>
+          <ul>
+            <li><strong>Card Sizing & Layout Controls</strong>:
+              <ul>
+                <li><strong>Placement Layout</strong>: Choose between <em>Auto (Recommended)</em>, <em>Stacked (Top / Bottom)</em>, or <em>Side-by-Side</em>.</li>
+                <li><strong>Card Width (cm)</strong>: Pre-populated with authentic physical dimensions (8.6 cm for Standard Card, 8.5 cm for vertical Aadhaar slip, 18.5 cm for horizontal slip). Fully adjustable to match your print shop's requirements.</li>
+                <li><strong>Lock Aspect Ratio</strong>: Checked by default to guarantee zero stretching or distortion.</li>
+                <li><strong>↺ Reset</strong>: Restores exact 1:1 real-world physical dimensions anytime.</li>
+              </ul>
+            </li>
+            <li><strong>Clean Output Guarantee</strong>: The exported Word document contains <strong>ZERO</strong> extra text, title labels, or header stamps. Only the clean, high-resolution card images positioned exactly for instant printing.</li>
+            <li>Click <strong>📄 EXPORT AS WORD (.DOCX)</strong>, choose your save path, and open in Word to print!</li>
+          </ul>
+          <div class="tip-box">
+            <div class="tip-title">🖨 Aadhaar Long Form Printing Tip</div>
+            For vertical Aadhaar slips (UIDAI letter format), <strong>Side-by-Side</strong> layout places both Front and Back at genuine 1:1 physical size (8.5 cm × 21.0 cm each) on a standard A4 portrait page with zero squashing.
+          </div>
+        </div>
+      </article>
+
+    </div>
+
+    <!-- Download Section Call to Action -->
+    <div style="margin-top: 60px; text-align: center;">
+      <a href="downloads/QenBel-Smart-Formatter-Setup.exe" class="btn-primary-download" style="display: inline-flex; max-width: 320px; margin: 0 auto;">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        <span>Download Installer (.exe)</span>
+      </a>
+      <p style="color: var(--text-dark); font-size: 13px; margin-top: 12px;">Windows 10 / 11 (64-bit)  •  Version 2.0.4  •  100% Offline & Private</p>
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="container footer-content">
+      <div class="footer-brand">
+        <span class="brand-logo-mark">Q</span>
+        <span>QENBEL SMART FORMATTER</span>
+      </div>
+      <p class="footer-copy">© 2026 QenBel Smart Formatter. Open Source under MIT License.</p>
+    </div>
+  </footer>
+
+</body>
+</html>

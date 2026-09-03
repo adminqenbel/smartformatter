@@ -17,6 +17,8 @@ from PySide6.QtWidgets import (
     QPushButton,
     QFrame,
     QComboBox,
+    QDoubleSpinBox,
+    QCheckBox,
     QFileDialog,
     QMessageBox,
     QScrollArea,
@@ -108,10 +110,10 @@ class PagePrint(QWidget):
                 border-radius: 16px;
             }
         """)
-        right_panel.setFixedWidth(360)
+        right_panel.setFixedWidth(380)
         r_layout = QVBoxLayout(right_panel)
-        r_layout.setContentsMargins(24, 24, 24, 24)
-        r_layout.setSpacing(18)
+        r_layout.setContentsMargins(22, 20, 22, 20)
+        r_layout.setSpacing(14)
 
         # Title
         title_box = QVBoxLayout()
@@ -122,43 +124,120 @@ class PagePrint(QWidget):
         title_box.addWidget(step_lbl)
 
         title = QLabel("Export Word Document")
-        title.setStyleSheet("font-size: 22px; font-weight: 800; color: #FFFFFF; letter-spacing: -0.3px; background: transparent;")
+        title.setStyleSheet("font-size: 21px; font-weight: 800; color: #FFFFFF; letter-spacing: -0.3px; background: transparent;")
         title_box.addWidget(title)
         r_layout.addLayout(title_box)
 
-        # Word Document Info Card
-        info_card = QFrame()
-        info_card.setStyleSheet("""
+        # Output Layout & Size Configuration Card
+        cfg_card = QFrame()
+        cfg_card.setStyleSheet("""
             QFrame {
                 background-color: #0F0F14;
                 border: 1px solid #1E293B;
                 border-radius: 12px;
-                padding: 16px;
+                padding: 12px;
             }
         """)
-        info_lay = QVBoxLayout(info_card)
-        info_lay.setSpacing(10)
+        cfg_lay = QVBoxLayout(cfg_card)
+        cfg_lay.setSpacing(10)
 
-        info_title = QLabel("📄 Microsoft Word (.docx)")
-        info_title.setStyleSheet("font-size: 15px; font-weight: 800; color: #FFFFFF; background: transparent;")
-        info_lay.addWidget(info_title)
+        cfg_head = QLabel("📏 CARD SIZING & LAYOUT")
+        cfg_head.setStyleSheet("font-size: 11px; font-weight: 800; letter-spacing: 1px; color: #94A3B8; background: transparent;")
+        cfg_lay.addWidget(cfg_head)
 
-        info_desc = QLabel(
-            "Exports a print-ready Word document on standard A4 paper with Front and Back "
-            "sides arranged side-by-side at exact physical dimensions (occupying only respective space)."
-        )
-        info_desc.setWordWrap(True)
-        info_desc.setStyleSheet("font-size: 12px; color: #94A3B8; line-height: 1.4; background: transparent;")
-        info_lay.addWidget(info_desc)
+        # Layout selector
+        lay_row = QVBoxLayout()
+        lay_row.setSpacing(4)
+        lbl_lay = QLabel("Placement Layout")
+        lbl_lay.setStyleSheet("font-size: 12px; font-weight: 700; color: #CBD5E1; background: transparent;")
+        lay_row.addWidget(lbl_lay)
 
-        r_layout.addWidget(info_card)
+        self.combo_layout = QComboBox()
+        self.combo_layout.setFixedHeight(34)
+        self.combo_layout.setStyleSheet(self._combo_style())
+        self.combo_layout.addItems([
+            "Auto (Recommended)",
+            "Stacked (Top / Bottom — Full Size)",
+            "Side-by-Side (Horizontal)"
+        ])
+        lay_row.addWidget(self.combo_layout)
+        cfg_lay.addLayout(lay_row)
 
-        r_layout.addSpacing(10)
+        # Width and Height spinboxes
+        size_box = QHBoxLayout()
+        size_box.setSpacing(12)
+
+        # Width
+        w_col = QVBoxLayout()
+        w_col.setSpacing(4)
+        lbl_w = QLabel("Card Width")
+        lbl_w.setStyleSheet("font-size: 12px; font-weight: 700; color: #CBD5E1; background: transparent;")
+        w_col.addWidget(lbl_w)
+
+        self.spin_width = QDoubleSpinBox()
+        self.spin_width.setFixedHeight(34)
+        self.spin_width.setRange(2.0, 20.5)
+        self.spin_width.setSingleStep(0.1)
+        self.spin_width.setDecimals(1)
+        self.spin_width.setSuffix(" cm")
+        self.spin_width.setValue(8.6)
+        self.spin_width.setStyleSheet(self._spin_style())
+        self.spin_width.valueChanged.connect(self._on_width_changed)
+        w_col.addWidget(self.spin_width)
+        size_box.addLayout(w_col)
+
+        # Height
+        h_col = QVBoxLayout()
+        h_col.setSpacing(4)
+        lbl_h = QLabel("Card Height")
+        lbl_h.setStyleSheet("font-size: 12px; font-weight: 700; color: #CBD5E1; background: transparent;")
+        h_col.addWidget(lbl_h)
+
+        self.spin_height = QDoubleSpinBox()
+        self.spin_height.setFixedHeight(34)
+        self.spin_height.setRange(2.0, 28.0)
+        self.spin_height.setSingleStep(0.1)
+        self.spin_height.setDecimals(1)
+        self.spin_height.setSuffix(" cm")
+        self.spin_height.setValue(5.4)
+        self.spin_height.setStyleSheet(self._spin_style())
+        h_col.addWidget(self.spin_height)
+        size_box.addLayout(h_col)
+
+        cfg_lay.addLayout(size_box)
+
+        # Lock aspect ratio & reset buttons
+        aspect_row = QHBoxLayout()
+        self.chk_lock_aspect = QCheckBox("Lock aspect ratio")
+        self.chk_lock_aspect.setChecked(True)
+        self.chk_lock_aspect.setStyleSheet("color: #94A3B8; font-size: 11px; font-weight: 600; background: transparent;")
+        aspect_row.addWidget(self.chk_lock_aspect)
+
+        btn_reset_sz = QPushButton("↺ Reset")
+        btn_reset_sz.setCursor(Qt.PointingHandCursor)
+        btn_reset_sz.setFixedHeight(26)
+        btn_reset_sz.setStyleSheet("""
+            QPushButton {
+                background: transparent;
+                color: #38BDF8;
+                border: none;
+                font-size: 11px;
+                font-weight: 700;
+            }
+            QPushButton:hover { text-decoration: underline; }
+        """)
+        btn_reset_sz.clicked.connect(self._reset_default_size)
+        aspect_row.addWidget(btn_reset_sz, alignment=Qt.AlignRight)
+
+        cfg_lay.addLayout(aspect_row)
+        r_layout.addWidget(cfg_card)
+
+        r_layout.addSpacing(4)
 
         # Single Primary Action: EXPORT AS WORD (.DOCX)
         self.btn_export_docx = QPushButton("  📄   EXPORT AS WORD (.DOCX)  ")
         self.btn_export_docx.setCursor(Qt.PointingHandCursor)
-        self.btn_export_docx.setFixedHeight(56)
+        self.btn_export_docx.setFixedHeight(54)
         self.btn_export_docx.setStyleSheet("""
             QPushButton {
                 background-color: #185ABD;
@@ -188,14 +267,14 @@ class PagePrint(QWidget):
         # Start New Card Button
         btn_new = QPushButton("⟲  Start New Card")
         btn_new.setCursor(Qt.PointingHandCursor)
-        btn_new.setFixedHeight(40)
+        btn_new.setFixedHeight(38)
         btn_new.setStyleSheet("""
             QPushButton {
                 background-color: transparent;
                 color: #38BDF8;
                 border: 1px solid #1E293B;
                 border-radius: 8px;
-                font-size: 13px;
+                font-size: 12px;
                 font-weight: 700;
             }
             QPushButton:hover {
@@ -230,56 +309,77 @@ class PagePrint(QWidget):
             }
         """
 
-    def _stepper_style(self):
+    def _spin_style(self):
         return """
-            QPushButton {
-                background-color: #1E1E26;
+            QDoubleSpinBox {
+                background-color: #0F0F14;
                 color: #FFFFFF;
-                border: 1px solid #2E2E3A;
+                border: 1px solid #24242E;
                 border-radius: 8px;
-                font-size: 16px;
+                padding: 4px 8px;
+                font-size: 13px;
                 font-weight: 700;
             }
-            QPushButton:hover { background-color: #2E2E3A; }
+            QDoubleSpinBox:focus { border-color: #38BDF8; }
         """
 
-    def _sec_btn_style(self):
-        return """
-            QPushButton {
-                background-color: #1E293B;
-                color: #E2E8F0;
-                border: 1px solid #334155;
-                border-radius: 8px;
-                font-size: 13px;
-                font-weight: 600;
-            }
-            QPushButton:hover {
-                background-color: #334155;
-                border-color: #475569;
-                color: #FFFFFF;
-            }
-        """
+    def _on_width_changed(self, new_w: float):
+        if not self.chk_lock_aspect.isChecked():
+            return
+        entry = self.pipeline.card_entry
+        ref_img = None
+        if entry and entry.front and entry.front.final_image is not None:
+            ref_img = entry.front.final_image
+        elif entry and entry.back and entry.back.final_image is not None:
+            ref_img = entry.back.final_image
 
-    def _populate_printers(self):
-        self.combo_printers.clear()
-        if _PRINT_SUPPORT:
-            printers = QPrinterInfo.availablePrinterNames()
-            default_p = QPrinterInfo.defaultPrinterName()
-            if printers:
-                for p in printers:
-                    self.combo_printers.addItem(p)
-                if default_p in printers:
-                    self.combo_printers.setCurrentText(default_p)
-                return
-        self.combo_printers.addItem("Default System Printer")
+        if ref_img is not None:
+            ih, iw = ref_img.shape[:2]
+            asp = iw / max(ih, 1)
+        else:
+            profile = (entry.format_profile if entry else None) or self.pipeline.active_card_profile
+            asp = max(profile.aspect_ratio, 1e-3)
 
-    def _decrement_copies(self):
-        self.copies = max(1, self.copies - 1)
-        self.lbl_copies.setText(str(self.copies))
+        calc_h = round(new_w / max(asp, 1e-3), 1)
+        self.spin_height.blockSignals(True)
+        self.spin_height.setValue(calc_h)
+        self.spin_height.blockSignals(False)
 
-    def _increment_copies(self):
-        self.copies = min(99, self.copies + 1)
-        self.lbl_copies.setText(str(self.copies))
+    def _reset_default_size(self):
+        entry = self.pipeline.card_entry
+        profile = (entry.format_profile if entry else None) or self.pipeline.active_card_profile
+        is_long = (profile.id == "long_form" or profile.aspect_ratio >= 2.0)
+        is_port = False
+        if entry and entry.front and entry.front.final_image is not None:
+            f = entry.front.final_image
+            is_port = f.shape[0] > f.shape[1]
+        elif entry and entry.back and entry.back.final_image is not None:
+            b = entry.back.final_image
+            is_port = b.shape[0] > b.shape[1]
+
+        self.spin_width.blockSignals(True)
+        self.spin_height.blockSignals(True)
+        if is_long:
+            if is_port:
+                # Vertical Aadhaar cut-slip (8.5 cm wide x 21.0 cm high)
+                self.spin_width.setValue(8.5)
+                self.spin_height.setValue(21.0)
+                self.combo_layout.setCurrentIndex(2)  # Side-by-side fits naturally on A4!
+            else:
+                # Horizontal Aadhaar cut-slip (21.0 cm wide x 8.5 cm high)
+                self.spin_width.setValue(18.5)
+                self.spin_height.setValue(round(18.5 / max(profile.aspect_ratio, 1e-3), 1))
+                self.combo_layout.setCurrentIndex(1)  # Stacked fits full width!
+        elif is_port:
+            self.spin_width.setValue(5.4)
+            self.spin_height.setValue(8.6)
+            self.combo_layout.setCurrentIndex(2)  # Side-by-side
+        else:
+            self.spin_width.setValue(8.6)
+            self.spin_height.setValue(5.4)
+            self.combo_layout.setCurrentIndex(2)  # Side-by-side
+        self.spin_width.blockSignals(False)
+        self.spin_height.blockSignals(False)
 
     def refresh_preview(self):
         entry = self.pipeline.card_entry
@@ -294,6 +394,9 @@ class PagePrint(QWidget):
         f_img = f_proc.final_image if f_proc is not None else None
         b_img = b_proc.final_image if b_proc is not None else None
         profile = entry.format_profile or self.pipeline.active_card_profile
+
+        # Reset sizing controls to match active profile defaults
+        self._reset_default_size()
 
         rendered, metrics = self.layout_engine.render_pair(
             f_img, b_img, profile, copies=1, single_page=False
@@ -326,7 +429,22 @@ class PagePrint(QWidget):
         )
         if not path:
             return
-        ok = DocxExporter.export_card_pair(self.pipeline.card_pair, path)
+
+        lay_idx = self.combo_layout.currentIndex()
+        if lay_idx == 0:
+            layout_mode = "auto"
+        elif lay_idx == 1:
+            layout_mode = "stacked"
+        else:
+            layout_mode = "side_by_side"
+
+        ok = DocxExporter.export_card_pair(
+            self.pipeline.card_pair,
+            path,
+            layout=layout_mode,
+            custom_width_cm=self.spin_width.value(),
+            custom_height_cm=self.spin_height.value(),
+        )
         if ok:
             msg_box = QMessageBox(self)
             msg_box.setWindowTitle("Word Document Ready")

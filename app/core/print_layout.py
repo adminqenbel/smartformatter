@@ -83,13 +83,18 @@ class CardOutputComposer:
         if front_bgr is None and back_bgr is None:
             return None
 
-        target_w = profile.width_px
-        target_h = profile.height_px
+        def _get_target_side_dims(img: np.ndarray) -> Tuple[int, int]:
+            ih, iw = img.shape[:2]
+            if iw >= ih:  # Landscape
+                return max(profile.width_px, profile.height_px), min(profile.width_px, profile.height_px)
+            else:  # Portrait
+                return min(profile.width_px, profile.height_px), max(profile.width_px, profile.height_px)
 
         def _prepare_side(img: np.ndarray) -> np.ndarray:
+            tw, th = _get_target_side_dims(img)
             h, w = img.shape[:2]
-            if w != target_w or h != target_h:
-                return cv2.resize(img, (target_w, target_h), interpolation=cv2.INTER_LANCZOS4)
+            if w != tw or h != th:
+                return cv2.resize(img, (tw, th), interpolation=cv2.INTER_LANCZOS4)
             return img
 
         if front_bgr is not None and back_bgr is None:
@@ -102,10 +107,19 @@ class CardOutputComposer:
         f_norm = _prepare_side(front_bgr)
         b_norm = _prepare_side(back_bgr)
 
+        fh, fw = f_norm.shape[:2]
+        bh, bw = b_norm.shape[:2]
+        common_h = max(fh, bh)
+
+        if fh != common_h:
+            f_norm = cv2.resize(f_norm, (int(round(fw * common_h / fh)), common_h), interpolation=cv2.INTER_LANCZOS4)
+        if bh != common_h:
+            b_norm = cv2.resize(b_norm, (int(round(bw * common_h / bh)), common_h), interpolation=cv2.INTER_LANCZOS4)
+
         if gap_px <= 0:
             return np.concatenate((f_norm, b_norm), axis=1)
 
-        gap_canvas = np.full((target_h, gap_px, 3), 255, dtype=np.uint8)
+        gap_canvas = np.full((common_h, gap_px, 3), 255, dtype=np.uint8)
         return np.concatenate((f_norm, gap_canvas, b_norm), axis=1)
 
 

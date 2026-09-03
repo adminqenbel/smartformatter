@@ -367,19 +367,6 @@ class CardWorkflow(QWidget):
 
     def _on_continue_clicked(self):
         curr = self.pages_stack.currentIndex()
-        if curr == 1 and not self._profile_confirmed:
-            # Step 2 → Step 3: Always ask the operator to confirm the card type.
-            # This is the gate that selects the correct CV detection strategy.
-            dlg = CardTypeDialog(self.active_profile, parent=self)
-            if dlg.exec() != QDialog.Accepted:
-                return  # User cancelled – stay on Arrange.
-            chosen = dlg.selected_profile
-            if chosen.id != self.active_profile.id:
-                self.active_profile = chosen
-                self.pipeline.set_card_profile(chosen)
-                # Keep the Arrange page UI in sync.
-                self.page_2.set_data(self.front_path, self.back_path, chosen)
-            self._profile_confirmed = True
         if curr < 4:
             self._go_to_step(curr + 1)
 

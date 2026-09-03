@@ -56,6 +56,9 @@ class ImageNormalizer:
                     tw = profile.height_px
                     th = profile.width_px
 
+        if w == tw and h == th:
+            return image.copy()
+
         normalized = cv2.resize(image, (tw, th), interpolation=cv2.INTER_LANCZOS4)
         return normalized
 
@@ -98,32 +101,38 @@ class ImageNormalizer:
     ) -> Tuple[Optional[np.ndarray], Optional[np.ndarray], int, int]:
         """
         Synchronizes Front and Back card dimensions to identical canonical size defined by FormatProfile.
+        Respects individual image orientations (landscape vs portrait) to prevent stretching or squashing.
         """
         if front_img is None and back_img is None:
             return None, None, 0, 0
 
         active_profile = profile or CARD_PROFILE
 
-        ref_img = front_img if front_img is not None else back_img
-        h, w = ref_img.shape[:2]
-        is_landscape = w >= h
+        def _get_target_dims(img: np.ndarray) -> Tuple[int, int]:
+            ih, iw = img.shape[:2]
+            if iw >= ih:  # Landscape
+                if active_profile.is_landscape:
+                    return active_profile.width_px, active_profile.height_px
+                else:
+                    return active_profile.height_px, active_profile.width_px
+            else:  # Portrait
+                if active_profile.is_landscape:
+                    return active_profile.height_px, active_profile.width_px
+                else:
+                    return active_profile.width_px, active_profile.height_px
 
-        if active_profile.is_landscape:
-            if is_landscape:
-                target_w = active_profile.width_px
-                target_h = active_profile.height_px
-            else:
-                target_w = active_profile.height_px
-                target_h = active_profile.width_px
-        else:
-            if not is_landscape:
-                target_w = active_profile.width_px
-                target_h = active_profile.height_px
-            else:
-                target_w = active_profile.height_px
-                target_h = active_profile.width_px
+        norm_front = None
+        target_w, target_h = 0, 0
+        if front_img is not None:
+            fw, fh = _get_target_dims(front_img)
+            norm_front = cls.normalize(front_img, profile=active_profile, target_width=fw, target_height=fh)
+            target_w, target_h = fw, fh
 
-        norm_front = cls.normalize(front_img, profile=active_profile, target_width=target_w, target_height=target_h) if front_img is not None else None
-        norm_back = cls.normalize(back_img, profile=active_profile, target_width=target_w, target_height=target_h) if back_img is not None else None
+        norm_back = None
+        if back_img is not None:
+            bw, bh = _get_target_dims(back_img)
+            norm_back = cls.normalize(back_img, profile=active_profile, target_width=bw, target_height=bh)
+            if target_w == 0:
+                target_w, target_h = bw, bh
 
         return norm_front, norm_back, target_w, target_h
