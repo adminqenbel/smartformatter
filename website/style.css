@@ -121,6 +121,14 @@ body {
   color: var(--text-white);
 }
 
+.brand-logo-image {
+  display: block;
+  width: 168px;
+  height: 40px;
+  object-fit: contain;
+  border-radius: 5px;
+}
+
 .brand-logo-mark {
   width: 32px;
   height: 32px;
@@ -760,6 +768,14 @@ body {
   font-weight: 800;
   letter-spacing: 1.5px;
   margin-bottom: 6px;
+}
+
+.footer-logo-image {
+  display: block;
+  width: 168px;
+  height: 40px;
+  object-fit: contain;
+  border-radius: 5px;
 }
 
 .footer-copy {

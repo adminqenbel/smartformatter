@@ -4,7 +4,7 @@
 ; =====================================================================
 
 #define MyAppName "QenBel Smart Formatter"
-#define MyAppVersion "1.0.0"
+#define MyAppVersion "2.0.5"
 #define MyAppPublisher "QenBel Technologies"
 #define MyAppURL "https://www.qenbel.com"
 #define MyAppExeName "QenBelSmartFormatter.exe"

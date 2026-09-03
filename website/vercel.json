@@ -4,7 +4,7 @@
   "redirects": [
     {
       "source": "/downloads/QenBel-Smart-Formatter-Setup.exe",
-      "destination": "https://github.com/adminqenbel/smartformatter/releases/download/v2.0.4/QenBel-Smart-Formatter-Setup.exe",
+      "destination": "https://github.com/adminqenbel/smartformatter/releases/download/v2.0.5/QenBel-Smart-Formatter-Setup.exe",
       "permanent": false
     }
   ]

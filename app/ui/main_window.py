@@ -52,7 +52,7 @@ class GlobalHeaderBar(QFrame):
         if AppPaths.LOGO_LIGHT.exists():
             logo_container = QFrame()
             logo_container.setStyleSheet("""
-                background-color: #FFFFFF;
+                background-color: #4B4F52;
                 border-radius: 6px;
                 padding: 2px;
             """)

@@ -69,7 +69,8 @@ class AppPaths:
     """Standard application paths."""
     ROOT_DIR = Path(__file__).resolve().parent.parent.parent
     APP_DIR = ROOT_DIR / "app"
-    LOGO_LIGHT = ROOT_DIR / "Logo" / "black_text_qenbel_logo_for_light_background.png"
+    # Canonical QenBel brand artwork bundled with the application.
+    LOGO_LIGHT = ROOT_DIR / "Logo" / "qenbel_brand_logo.png"
     
     # User Application Data Directory
     USER_DATA_DIR = Path(os.environ.get("APPDATA", str(Path.home()))) / "QenBelSmartFormatter"
